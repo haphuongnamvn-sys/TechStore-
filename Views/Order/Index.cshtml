@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+}
+
+<div id="page-orders" class="page">
+    <div class="container section">
+        <div class="section-header">
+            <h2 class="section-title">📦 Đơn hàng của tôi</h2>
+            <a href="/" class="btn btn-ghost btn-sm">← Tiếp tục mua sắm</a>
+        </div>
+
+        <!-- Tab danh mục phân loại theo trạng thái đơn hàng -->
+        <div class="order-status-tabs" id="order-status-tabs">
+            <button class="order-tab active" data-status="all" onclick="filterOrderStatus('all', this)">
+                🔥 Tất cả <span class="order-tab-count" id="count-order-all">0</span>
+            </button>
+            <button class="order-tab" data-status="pending" onclick="filterOrderStatus('pending', this)">
+                ⏳ Chờ xác nhận <span class="order-tab-count" id="count-order-pending">0</span>
+            </button>
+            <button class="order-tab" data-status="processing" onclick="filterOrderStatus('processing', this)">
+                ⚙️ Đang xử lý <span class="order-tab-count" id="count-order-processing">0</span>
+            </button>
+            <button class="order-tab" data-status="shipped" onclick="filterOrderStatus('shipped', this)">
+                🚚 Đang giao <span class="order-tab-count" id="count-order-shipped">0</span>
+            </button>
+            <button class="order-tab" data-status="delivered" onclick="filterOrderStatus('delivered', this)">
+                ✅ Hoàn thành <span class="order-tab-count" id="count-order-delivered">0</span>
+            </button>
+            <button class="order-tab" data-status="cancelled" onclick="filterOrderStatus('cancelled', this)">
+                ❌ Đã hủy <span class="order-tab-count" id="count-order-cancelled">0</span>
+            </button>
+        </div>
+
+        <div id="orders-list"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof loadOrders === 'function') {
+            loadOrders();
+        }
+    });
+</script>

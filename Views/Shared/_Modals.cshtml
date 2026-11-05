@@ -1,0 +1,671 @@
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title">👤 Tài khoản</h2>
+            <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+        </div>
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login"    onclick="switchAuthTab('login')">Đăng nhập</button>
+            <button class="auth-tab"        id="tab-register" onclick="switchAuthTab('register')">Đăng ký</button>
+        </div>
+
+        <!-- Login -->
+        <div class="auth-panel active" id="panel-login">
+            <div class="form-group">
+                <label>Tên đăng nhập</label>
+                <input type="text" id="login-username" placeholder="Nhập tên đăng nhập">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="login-password" placeholder="Nhập mật khẩu">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="doLogin()">Đăng nhập</button>
+        </div>
+
+        <!-- Register -->
+        <div class="auth-panel" id="panel-register">
+            <div class="form-group">
+                <label>Tên đăng nhập</label>
+                <input type="text" id="reg-username" placeholder="Tối thiểu 3 ký tự">
+            </div>
+            <div class="form-group">
+                <label>Họ và tên</label>
+                <input type="text" id="reg-fullname" placeholder="Họ và tên đầy đủ">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" id="reg-phone" placeholder="0xxxxxxxxx">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="doRegister()">Tạo tài khoản</button>
+        </div>
+    </div>
+</div>
+
+<!-- USER PROFILE MODAL -->
+<div class="modal-overlay" id="profile-modal">
+    <div class="modal" style="max-width:540px">
+        <div class="modal-header">
+            <h2 class="modal-title">👤 Thông Tin & Tài Khoản Cá Nhân</h2>
+            <button class="modal-close" onclick="closeModal('profile-modal')">✕</button>
+        </div>
+
+        <div class="profile-tabs" style="display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;padding-bottom:10px">
+            <button type="button" class="btn btn-primary btn-sm profile-tab-btn" id="btn-tab-info" onclick="switchProfileTab('info')">📋 Thông tin cá nhân</button>
+            <button type="button" class="btn btn-ghost btn-sm profile-tab-btn" id="btn-tab-security" onclick="switchProfileTab('security')">🔑 Đổi mật khẩu</button>
+        </div>
+
+        <!-- Tab 1: Profile Info -->
+        <div id="profile-tab-info">
+            <form onsubmit="submitUpdateProfile(event)">
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="prof-username" readonly disabled style="background:var(--bg-2);cursor:not-allowed">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group">
+                        <label>Họ và tên *</label>
+                        <input type="text" id="prof-fullname" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại *</label>
+                        <input type="text" id="prof-phone" required placeholder="0xxxxxxxxx">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="prof-email" required>
+                </div>
+
+                <div style="font-weight:700;font-size:13px;margin:14px 0 8px;color:var(--text-2)">📍 Địa chỉ giao hàng mặc định:</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div class="form-group" style="margin:0">
+                        <label>Tỉnh / Thành phố</label>
+                        <select id="prof-province" onchange="onProfileProvinceChange()">
+                            <option value="">-- Chọn Tỉnh/Thành --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label>Quận / Huyện</label>
+                        <select id="prof-district" onchange="onProfileDistrictChange()">
+                            <option value="">-- Chọn Quận/Huyện --</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div class="form-group" style="margin:0">
+                        <label>Phường / Xã</label>
+                        <select id="prof-ward">
+                            <option value="">-- Chọn Phường/Xã --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label>Số nhà, đường</label>
+                        <input type="text" id="prof-street" placeholder="VD: 123 Đường Cầu Giấy">
+                    </div>
+                </div>
+
+                <button type="submit" id="prof-submit-btn" class="btn btn-primary btn-full" style="margin-top:16px">💾 Lưu thay đổi</button>
+            </form>
+        </div>
+
+        <!-- Tab 2: Security / Password -->
+        <div id="profile-tab-security" style="display:none">
+            <form onsubmit="submitChangePassword(event)">
+                <div class="form-group">
+                    <label>Mật khẩu hiện tại *</label>
+                    <input type="password" id="pwd-current" required placeholder="Nhập mật khẩu đang dùng">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu mới * (tối thiểu 6 ký tự)</label>
+                    <input type="password" id="pwd-new" required minlength="6" placeholder="Nhập mật khẩu mới">
+                </div>
+                <div class="form-group">
+                    <label>Xác nhận mật khẩu mới *</label>
+                    <input type="password" id="pwd-confirm" required minlength="6" placeholder="Nhập lại mật khẩu mới">
+                </div>
+                <button type="submit" id="pwd-submit-btn" class="btn btn-primary btn-full" style="margin-top:16px">🔑 Cập nhật mật khẩu</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- VIETQR PAYMENT MODAL -->
+<div class="modal-overlay" id="vnpay-modal">
+    <div class="modal" style="max-width:440px;text-align:center;padding:24px 26px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:22px">💳</span>
+                <h3 style="margin:0;font-size:17px;font-weight:700">Thanh toán chuyển khoản VietQR</h3>
+            </div>
+            <button type="button" class="modal-close" onclick="cancelVNPay()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+        </div>
+
+        <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;line-height:1.4">
+            Quét mã QR bằng App Ngân hàng hoặc Ví điện tử (MoMo, ZaloPay, VNPay, Viettel Money)
+        </p>
+
+        <div style="background:#fff;padding:12px;border-radius:12px;border:1px solid var(--border);display:inline-block;box-shadow:0 4px 14px rgba(0,0,0,0.06);margin-bottom:14px">
+            <img id="vnpay-qr-img" src="" alt="Mã VietQR" style="width:220px;height:220px;object-fit:contain;display:block">
+        </div>
+
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:left;font-size:12.5px;margin-bottom:16px;line-height:1.6">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                <span style="color:var(--text-3)">Ngân hàng:</span>
+                <b>MB Bank (Quân Đội)</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                <span style="color:var(--text-3)">Chủ tài khoản:</span>
+                <b>Hà Phương Nam</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                <span style="color:var(--text-3)">Số tài khoản:</span>
+                <b style="color:var(--primary);letter-spacing:1px;font-size:14px">1220820056666</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                <span style="color:var(--text-3)">Số tiền:</span>
+                <b id="vnpay-amount" style="color:var(--danger);font-size:15px">0 đ</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-3)">Nội dung CK:</span>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <b id="vnpay-order-code" style="color:var(--primary);font-size:13px"></b>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="copyOrderCode()" style="padding:2px 8px;font-size:11px" title="Sao chép nội dung">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+            <button class="btn btn-ghost" style="flex:1" onclick="cancelVNPay()">Thanh toán sau</button>
+            <button class="btn btn-primary" style="flex:1.4" onclick="confirmVNPay()" id="vnpay-confirm-btn">📨 Đã chuyển tiền (Chờ duyệt)</button>
+        </div>
+    </div>
+</div>
+
+<!-- CREATE / EDIT PRODUCT MODAL (4 TABS / STEPS) -->
+<div class="modal-overlay" id="create-product-modal">
+    <div class="modal" style="max-width: 960px; width: 96%; max-height: 92vh; overflow-y: auto; padding: 24px 30px; border-radius: 18px;">
+        <div class="modal-header" style="margin-bottom: 14px;">
+            <div>
+                <h2 class="modal-title" style="font-size: 20px; display: flex; align-items: center; gap: 8px; margin: 0;">✨ Thêm Sản Phẩm Mới</h2>
+                <div style="font-size: 12.5px; color: var(--text-3); margin-top: 3px;">Chuyển đổi linh hoạt giữa 4 bước để cấu hình đầy đủ thông tin, hình ảnh, đặc điểm nổi bật và thông số kỹ thuật theo danh mục</div>
+            </div>
+            <button class="modal-close" type="button" onclick="closeModal('create-product-modal')">✕</button>
+        </div>
+
+        <!-- Stepper / Tabs Navigation -->
+        <div id="cp-tabs-nav" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; background: var(--bg-2); padding: 6px; border-radius: 12px; border: 1px solid var(--border);">
+            <button type="button" class="cp-tab-btn active" data-step="1" onclick="switchProductModalTab(1)" style="padding: 10px 12px; border-radius: 9px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; transition: all .2s;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.22); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+                <span>Thông tin cơ bản</span>
+            </button>
+            <button type="button" class="cp-tab-btn" data-step="2" onclick="switchProductModalTab(2)" style="padding: 10px 12px; border-radius: 9px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; background: transparent; color: var(--text-2); transition: all .2s;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+                <span>Hình ảnh SP</span>
+            </button>
+            <button type="button" class="cp-tab-btn" data-step="3" onclick="switchProductModalTab(3)" style="padding: 10px 12px; border-radius: 9px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; background: transparent; color: var(--text-2); transition: all .2s;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">3</span>
+                <span>Mô tả & Nổi bật</span>
+            </button>
+            <button type="button" class="cp-tab-btn" data-step="4" onclick="switchProductModalTab(4)" style="padding: 10px 12px; border-radius: 9px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; background: transparent; color: var(--text-2); transition: all .2s;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">4</span>
+                <span>Thông số kỹ thuật</span>
+            </button>
+        </div>
+
+        <form id="create-product-form" onsubmit="submitCreateProduct(event)">
+            <input type="hidden" id="cp-id" value="">
+
+            <!-- TAB 1: THÔNG TIN CƠ BẢN & BIẾN THỂ -->
+            <div id="cp-step-1" class="cp-step-pane">
+                <!-- Tên sản phẩm, Mã SP & Nhãn -->
+                <div style="display: grid; grid-template-columns: 1fr 160px 150px; gap: 14px; margin-bottom: 14px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Tên sản phẩm *</label>
+                        <input type="text" id="cp-name" required placeholder="VD: iPhone 16 Pro Max, AirPods Pro 2..." style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;" title="ID Primary Key và Mã sản phẩm do hệ thống tự động sinh lúc tạo và cố định vĩnh viễn">🔒 ID & Mã SP (Hệ thống)</label>
+                        <input type="text" id="cp-code" readonly disabled value="Tự động sinh khi tạo" style="width: 100%; box-sizing: border-box; font-family: monospace; background: var(--bg-2); color: var(--text-2); font-weight: 700; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Nhãn nổi bật</label>
+                        <select id="cp-badge" style="width: 100%; box-sizing: border-box;">
+                            <option value="">-- Không có --</option>
+                            <option value="HOT">🔥 HOT</option>
+                            <option value="NEW">✨ NEW</option>
+                            <option value="SALE">🏷️ SALE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Danh mục, Thương hiệu, Trạng thái -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Danh mục sản phẩm *</label>
+                        <select id="cp-category" required onchange="onProductCategoryChange()" style="width: 100%; box-sizing: border-box;">
+                            <option value="1">Điện thoại</option>
+                            <option value="2">Laptop</option>
+                            <option value="3">Âm thanh</option>
+                            <option value="4">Đồng hồ thông minh</option>
+                            <option value="5">Máy tính bảng</option>
+                            <option value="6">Phụ kiện</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Thương hiệu *</label>
+                        <select id="cp-brand" required style="width: 100%; box-sizing: border-box;">
+                            <option value="1">Apple</option>
+                            <option value="2">Samsung</option>
+                            <option value="3">Sony</option>
+                            <option value="4">ASUS</option>
+                            <option value="5">Xiaomi</option>
+                            <option value="6">Anker</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Trạng thái kinh doanh</label>
+                        <select id="cp-active" style="width: 100%; box-sizing: border-box;">
+                            <option value="true">🟢 Đang kinh doanh (Hiển thị)</option>
+                            <option value="false">🔴 Ngừng kinh doanh (Tạm ẩn)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Giá gốc, Giá khuyến mãi & Tổng tồn kho -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Giá niêm yết / Giá gốc (VNĐ) *</label>
+                        <input type="number" id="cp-price" required min="0" placeholder="VD: 25990000" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Giá khuyến mãi (VNĐ, 0 = không giảm)</label>
+                        <input type="number" id="cp-saleprice" value="0" min="0" placeholder="VD: 21990000" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-weight: 600; margin-bottom: 6px; display: block;">Tổng số lượng tồn kho (Tự đồng bộ)</label>
+                        <input type="number" id="cp-stock" value="10" min="0" readonly style="width: 100%; box-sizing: border-box; background: var(--bg-2); font-weight: 700; color: var(--primary);">
+                    </div>
+                </div>
+
+                <!-- Bảng Phiên bản & Màu sắc -->
+                <div style="background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 14px; color: var(--text);">🎨 Phiên bản, Màu sắc, Ảnh theo màu & Tồn kho chi tiết</div>
+                            <div style="font-size: 12px; color: var(--text-3); margin-top: 2px;">Mỗi dòng là 1 tổ hợp (Phiên bản + Màu sắc). Đổi ảnh một màu sẽ tự đồng bộ cho các phiên bản cùng màu đó.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addProductVariantRow()" style="font-weight: 600;">+ Thêm biến thể / màu</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+                            <thead>
+                                <tr style="border-bottom: 1.5px solid var(--border); text-align: left; color: var(--text-2);">
+                                    <th style="padding: 8px 6px; min-width: 120px;">Phiên bản</th>
+                                    <th style="padding: 8px 6px; min-width: 130px;">Tên màu sắc</th>
+                                    <th style="padding: 8px 6px; width: 62px;">Mã màu</th>
+                                    <th style="padding: 8px 6px; min-width: 120px;">Giá bán (VNĐ)</th>
+                                    <th style="padding: 8px 6px; width: 85px;">Tồn kho</th>
+                                    <th style="padding: 8px 6px; min-width: 210px;">Ảnh theo màu sắc</th>
+                                    <th style="padding: 8px 4px; width: 36px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cp-variants-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: HÌNH ẢNH SẢN PHẨM (ẢNH ĐẠI DIỆN & GALLERY CHI TIẾT) -->
+            <div id="cp-step-2" class="cp-step-pane" style="display: none;">
+                <div style="background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px;">
+                    <label style="font-weight: 700; font-size: 14.5px; margin-bottom: 8px; display: block;">🖼️ 1. Ảnh đại diện chính của sản phẩm *</label>
+                    <div style="font-size: 12.5px; color: var(--text-3); margin-bottom: 10px;">Ảnh này hiển thị trên thẻ sản phẩm ngoài trang chủ, trang tìm kiếm và là ảnh mặc định khi mở chi tiết sản phẩm.</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="cp-image" placeholder="/images/products/... hoặc https://..." oninput="onPrimaryImageInputChange(this.value)" style="flex: 1; min-width: 0; box-sizing: border-box;">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('cp-file-input').click()" style="white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; font-weight: 600;">
+                            📁 <span>Tải ảnh từ máy</span>
+                        </button>
+                    </div>
+                    <input type="file" id="cp-file-input" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+                    <input type="file" id="cp-variant-file-input" accept="image/*" style="display:none" onchange="handleVariantImageUpload(this)">
+
+                    <div id="cp-image-preview-wrap" style="display:none; margin-top: 12px; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; align-items: center; gap: 14px;">
+                        <img id="cp-image-preview" src="" onerror="this.src='/images/placeholder.svg'" style="width: 68px; height: 68px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border); background: #fff; flex-shrink: 0;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div id="cp-image-status" style="font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 2px;"></div>
+                            <div style="font-size: 12px; color: var(--text-3);">Đảm bảo hình ảnh đúng với tên gọi và loại sản phẩm</div>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="clearProductImage()" style="color: var(--danger); font-size: 12px; padding: 4px 8px;">✕ Xóa</button>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 14.5px;">📸 2. Bộ sưu tập ảnh chi tiết (Gallery)</div>
+                            <div style="font-size: 12.5px; color: var(--text-3);">Thêm các góc chụp chi tiết của sản phẩm. Ảnh của các màu sắc ở Bước 1 cũng sẽ tự động được gộp vào thư viện ảnh.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('cp-gallery-file-input').click()" style="font-weight: 600;">📁 + Tải ảnh chi tiết từ máy</button>
+                    </div>
+                    <input type="file" id="cp-gallery-file-input" accept="image/*" multiple style="display:none" onchange="handleGalleryFileUpload(this)">
+
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="text" id="cp-gallery-url-input" placeholder="Nhập URL ảnh chi tiết (/images/products/... hoặc https://...)" style="flex: 1; font-size: 13px;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addGalleryUrlFromInput()" style="white-space: nowrap; font-weight: 600;">+ Thêm URL ảnh</button>
+                    </div>
+
+                    <div id="cp-gallery-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;"></div>
+                </div>
+            </div>
+
+            <!-- TAB 3: MÔ TẢ & ĐẶC ĐIỂM NỔI BẬT -->
+            <div id="cp-step-3" class="cp-step-pane" style="display: none;">
+                <!-- Đặc điểm nổi bật riêng biệt -->
+                <div style="background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 14.5px; color: var(--text);">🌟 Đặc điểm nổi bật của sản phẩm</div>
+                            <div style="font-size: 12px; color: var(--text-3);">Quản lý riêng biệt từng ưu điểm/tính năng đáng chú ý. Hiển thị tại khung "Đặc điểm nổi bật" ở trang chi tiết sản phẩm.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addProductHighlightRow('')" style="font-weight: 600;">+ Thêm đặc điểm nổi bật</button>
+                    </div>
+                    <div id="cp-highlights-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
+                <!-- Mô tả chi tiết sản phẩm -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 700; font-size: 14.5px; margin-bottom: 6px; display: block;">📝 Mô tả chi tiết sản phẩm</label>
+                    <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">Nội dung giới thiệu tổng quan, đánh giá chi tiết về thiết kế, công năng và trải nghiệm thực tế của sản phẩm.</div>
+                    <textarea id="cp-desc" rows="6" placeholder="Nhập nội dung mô tả chi tiết sản phẩm..." style="width: 100%; box-sizing: border-box; line-height: 1.6;"></textarea>
+                </div>
+            </div>
+
+            <!-- TAB 4: THÔNG SỐ KỸ THUẬT THEO DANH MỤC -->
+            <div id="cp-step-4" class="cp-step-pane" style="display: none;">
+                <div style="background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-weight: 700; font-size: 14.5px; color: var(--text);">📋 Thông số kỹ thuật theo loại sản phẩm</span>
+                                <span id="cp-spec-cat-badge" style="background: var(--primary); color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px;">Điện thoại</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-3); margin-top: 3px;">Bộ thông số tự động khớp với Danh mục đã chọn. Các trường để trống sẽ không hiển thị trên trang sản phẩm (không bắt buộc điền tất cả).</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="applyCategorySpecTemplate(true)" title="Nạp các trường thông số chuẩn của danh mục hiện tại">🔄 Nạp khung theo danh mục</button>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="addProductSpecRow('', '')" style="font-weight: 600;">+ Thêm thông số khác</button>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="border-bottom: 1.5px solid var(--border); text-align: left; color: var(--text-2);">
+                                <th style="padding: 8px 6px; width: 36%;">Tên thông số kỹ thuật</th>
+                                <th style="padding: 8px 6px;">Giá trị thông số (Có thể để trống nếu không áp dụng)</th>
+                                <th style="padding: 8px 4px; width: 40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cp-specs-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Thanh điều hướng Footer giữa các Bước & Lưu sản phẩm -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('create-product-modal')">Hủy bỏ</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" id="cp-prev-step-btn" class="btn btn-outline" onclick="stepProductModal(-1)" style="display: none;">← Bước trước</button>
+                    <button type="button" id="cp-next-step-btn" class="btn btn-outline" onclick="stepProductModal(1)">Bước tiếp theo →</button>
+                    <button type="submit" id="cp-submit-btn" class="btn btn-primary" style="padding: 10px 22px; font-size: 14.5px; font-weight: 700;">💾 Lưu & Đồng Bộ Sản Phẩm</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CATEGORY MANAGEMENT MODAL -->
+<div class="modal-overlay" id="category-modal">
+    <div class="modal" style="max-width: 640px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 26px 30px; border-radius: 18px;">
+        <div class="modal-header" style="margin-bottom: 18px;">
+            <h2 class="modal-title" id="cat-modal-title" style="font-size: 20px; margin: 0;">🗂️ Thêm Danh Mục Sản Phẩm</h2>
+            <button class="modal-close" type="button" onclick="closeModal('category-modal')">✕</button>
+        </div>
+        <form id="category-form" onsubmit="submitSaveCategory(event)">
+            <input type="hidden" id="cat-id" value="">
+
+            <div style="display: grid; grid-template-columns: 1fr 160px; gap: 14px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Tên danh mục *</label>
+                    <input type="text" id="cat-name" required placeholder="VD: Điện thoại, Tai nghe, Đồng hồ thông minh..." style="width: 100%; box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;" title="ID Primary Key và Mã danh mục do hệ thống tự động sinh lúc tạo và không được sửa">🔒 ID & Mã DM (Hệ thống)</label>
+                    <input type="text" id="cat-code" readonly disabled value="Tự động sinh khi tạo" style="width: 100%; box-sizing: border-box; font-family: monospace; background: var(--bg-2); color: var(--text-2); font-weight: 700; cursor: not-allowed;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Đường dẫn tĩnh (Slug)</label>
+                    <input type="text" id="cat-slug" placeholder="Tự động tạo nếu để trống" style="width: 100%; box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Trạng thái hoạt động</label>
+                    <select id="cat-active" style="width: 100%; box-sizing: border-box;">
+                        <option value="true">🟢 Đang hoạt động</option>
+                        <option value="false">🔴 Tạm ngưng / Ẩn</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: 600; margin-bottom: 6px; display: block;">Ảnh đại diện danh mục (URL)</label>
+                <input type="text" id="cat-image" placeholder="https://... hoặc /images/..." style="width: 100%; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: 600; margin-bottom: 6px; display: block;">Mô tả danh mục</label>
+                <textarea id="cat-desc" rows="2" placeholder="Nhập mô tả ngắn cho danh mục sản phẩm..." style="width: 100%; box-sizing: border-box;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="font-weight: 600; margin-bottom: 4px; display: block;">📋 Bộ khung thông số kỹ thuật chuẩn của danh mục (Mỗi dòng 1 thông số)</label>
+                <div style="font-size: 12px; color: var(--text-3); margin-bottom: 6px;">Khi chọn danh mục này lúc Thêm/Sửa sản phẩm, hệ thống sẽ tự động gợi ý đúng các trường thông số kỹ thuật dưới đây.</div>
+                <textarea id="cat-spec-templates" rows="6" placeholder="VD:&#10;Màn hình&#10;Bộ vi xử lý&#10;RAM&#10;Bộ nhớ trong..." style="width: 100%; box-sizing: border-box; font-size: 13px; line-height: 1.5;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('category-modal')">Hủy</button>
+                <button type="submit" id="cat-submit-btn" class="btn btn-primary" style="font-weight: 700; padding: 10px 22px;">💾 Lưu Danh Mục</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ORDER REVIEW MODAL -->
+<div class="modal-overlay" id="order-review-modal">
+    <div class="modal" style="max-width: 500px; width: 95%; padding: 26px 30px; border-radius: 18px;">
+        <div class="modal-header" style="margin-bottom: 18px;">
+            <h2 class="modal-title" style="font-size: 20px;">⭐ Đánh Giá Sản Phẩm</h2>
+            <button class="modal-close" type="button" onclick="closeModal('order-review-modal')">✕</button>
+        </div>
+        <form id="order-review-form" onsubmit="submitOrderReview(event)">
+            <input type="hidden" id="rev-product-id">
+            <input type="hidden" id="rev-order-id">
+
+            <!-- Thông tin sản phẩm vừa mua -->
+            <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg-2);border-radius:12px;margin-bottom:20px;border:1px solid var(--border)">
+                <img id="rev-product-img" src="" alt="" style="width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:#fff;flex-shrink:0">
+                <div style="flex:1;min-width:0">
+                    <div id="rev-product-name" style="font-weight:700;font-size:14.5px;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="rev-order-code" style="font-size:12px;color:var(--text-3)"></div>
+                </div>
+            </div>
+
+            <!-- Chọn số sao (1 đến 5 sao) -->
+            <div class="form-group" style="text-align:center;margin-bottom:20px">
+                <label style="font-weight:600;display:block;margin-bottom:8px">Mức độ hài lòng của bạn *</label>
+                <div class="star-picker" id="order-star-picker" style="justify-content:center;font-size:36px;margin:8px 0">
+                    <span onclick="setOrderRating(1)" data-val="1">★</span>
+                    <span onclick="setOrderRating(2)" data-val="2">★</span>
+                    <span onclick="setOrderRating(3)" data-val="3">★</span>
+                    <span onclick="setOrderRating(4)" data-val="4">★</span>
+                    <span onclick="setOrderRating(5)" data-val="5">★</span>
+                </div>
+                <div id="order-rating-text" style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px">Tuyệt vời (5 sao)</div>
+            </div>
+
+            <!-- Ô nhận xét / bình luận -->
+            <div class="form-group" style="margin-bottom:22px">
+                <label style="font-weight:600;display:block;margin-bottom:6px">Nhận xét chi tiết *</label>
+                <textarea id="rev-comment" rows="4" required placeholder="Chia sẻ cảm nhận về chất lượng sản phẩm, hiệu năng, đóng gói, thái độ giao hàng..." style="width:100%;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:inherit"></textarea>
+            </div>
+
+            <!-- Nút gửi -->
+            <button type="submit" id="rev-submit-btn" class="btn btn-primary btn-full" style="padding:12px;font-size:15px;font-weight:700">
+                ⭐ Gửi Đánh Giá
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- CART SIDEBAR -->
+<div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+        <h2>🛒 Giỏ hàng</h2>
+        <button class="cart-close" onclick="closeCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cart-items-list"></div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+        <div class="cart-total">
+            <span>Tổng cộng</span>
+            <span id="cart-total-price" style="color:var(--primary)">0 ₫</span>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="openCheckout()">Thanh toán ngay →</button>
+    </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkout-modal">
+    <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+            <h2 class="modal-title">🛍️ Đặt hàng</h2>
+            <button class="modal-close" onclick="closeModal('checkout-modal')">✕</button>
+        </div>
+
+        <!-- Steps indicator -->
+        <div class="checkout-steps">
+            <div class="step-item active" id="step-1"><div class="step-num">1</div><div class="step-lbl">Địa chỉ</div></div>
+            <div class="step-item"        id="step-2"><div class="step-num">2</div><div class="step-lbl">Thanh toán</div></div>
+            <div class="step-item"        id="step-3"><div class="step-num">3</div><div class="step-lbl">Xác nhận</div></div>
+        </div>
+
+        <!-- Step 1: Address -->
+        <div id="checkout-step-1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Thông tin giao hàng</span>
+                <span id="co-prefill-note" style="font-size:12px;color:var(--primary);cursor:pointer;font-weight:600" onclick="applyProfileAddressToCheckout()" title="Nhấn để tự động điền địa chỉ đã lưu trong hồ sơ cá nhân">📍 Lấy từ hồ sơ cá nhân</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+                <div class="form-group" style="margin:0"><label>Họ và tên *</label><input id="co-name" placeholder="Nguyễn Văn A" required></div>
+                <div class="form-group" style="margin:0"><label>Số điện thoại *</label><input id="co-phone" placeholder="0xxxxxxxxx" required></div>
+            </div>
+            <div class="form-group"><label>Email *</label><input type="email" id="co-email" placeholder="email@example.com" required></div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div class="form-group" style="margin:0">
+                    <label>Tỉnh / Thành phố *</label>
+                    <select id="co-province" onchange="onCheckoutProvinceChange()" required>
+                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label>Quận / Huyện *</label>
+                    <select id="co-district" onchange="onCheckoutDistrictChange()" required>
+                        <option value="">-- Chọn Quận / Huyện --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div class="form-group" style="margin:0">
+                    <label>Phường / Xã *</label>
+                    <select id="co-ward" required>
+                        <option value="">-- Chọn Phường / Xã --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label>Số nhà, ngõ, tên đường *</label>
+                    <input id="co-street" placeholder="VD: 45 Ngõ 12..." required>
+                </div>
+            </div>
+
+            <div class="form-group"><label>Ghi chú đơn hàng (nếu có)</label><textarea id="co-note" rows="2" placeholder="Ghi chú cho người giao hàng (hướng dẫn đường đi, giờ nhận hàng...)"></textarea></div>
+            <button class="btn btn-primary btn-full" onclick="goToCheckoutStep(2)">Tiếp tục →</button>
+        </div>
+
+        <!-- Step 2: Payment -->
+        <div id="checkout-step-2" style="display:none">
+            <h3 style="margin-bottom:16px">Chọn phương thức thanh toán</h3>
+            <div class="payment-options">
+                <div class="payment-option selected" id="pay-cod" onclick="selectPayment('cod')">
+                    <div class="icon">💵</div>
+                    <div class="label">Tiền mặt (COD)</div>
+                    <div class="sub">Thanh toán khi nhận hàng</div>
+                </div>
+                <div class="payment-option" id="pay-online" onclick="selectPayment('online')">
+                    <div class="icon">💳</div>
+                    <div class="label">Thanh toán Online</div>
+                    <div class="sub">VNPay / MoMo / Thẻ</div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:16px">
+                <label style="font-weight:600;font-size:14px">🎟️ Mã giảm giá / Khuyến mãi</label>
+                <div style="display:flex;gap:8px">
+                    <input id="co-promo" placeholder="Nhập mã (VD: WELCOME10, SALE200K)" style="text-transform:uppercase">
+                    <button class="btn btn-outline" type="button" onclick="applyPromo()">Áp dụng</button>
+                </div>
+                <div id="promo-msg" style="font-size:13px;margin-top:6px;font-weight:600"></div>
+            </div>
+            <div id="checkout-summary" style="background:var(--bg);border-radius:var(--radius-sm);padding:16px;margin-top:16px"></div>
+            <div style="display:flex;gap:12px;margin-top:20px">
+                <button class="btn btn-ghost" onclick="checkoutStep(1)">← Quay lại</button>
+                <button class="btn btn-primary" style="flex:1" onclick="checkoutStep(3)">Xem lại đơn hàng →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Confirm -->
+        <div id="checkout-step-3" style="display:none">
+            <div id="checkout-review" style="background:var(--bg);border-radius:var(--radius-sm);padding:20px;margin-bottom:20px"></div>
+            <div style="display:flex;gap:12px">
+                <button class="btn btn-ghost" onclick="checkoutStep(2)">← Quay lại</button>
+                <button class="btn btn-primary" style="flex:1" id="confirm-order-btn" onclick="confirmOrder()">✅ Xác nhận đặt hàng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="success-modal">
+    <div class="modal" style="text-align:center;max-width:400px">
+        <div style="font-size:64px;margin-bottom:16px">🎉</div>
+        <h2 style="margin-bottom:8px">Đặt hàng thành công!</h2>
+        <p style="color:var(--text-2);margin-bottom:8px">Mã đơn hàng của bạn:</p>
+        <div id="success-order-code" style="font-size:22px;font-weight:800;color:var(--primary);margin-bottom:20px"></div>
+        <p style="color:var(--text-3);font-size:14px;margin-bottom:24px">Chúng tôi sẽ liên hệ xác nhận trong vòng 30 phút. Cảm ơn bạn đã tin tưởng TechStore! 💙</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+            <button class="btn btn-outline" onclick="closeModal('success-modal');showPage('home')">Tiếp tục mua sắm</button>
+            <button class="btn btn-primary" onclick="closeModal('success-modal');showPage('orders')">Theo dõi đơn →</button>
+        </div>
+    </div>
+</div>

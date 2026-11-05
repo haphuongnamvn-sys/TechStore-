@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Đăng ký tài khoản mới";
+}
+<div class="container section" style="max-width:480px;margin:40px auto">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow)">
+        <h2 style="text-align:center;margin-bottom:8px">✨ Đăng ký tài khoản TechStore</h2>
+        <p style="text-align:center;color:var(--text-3);font-size:13.5px;margin-bottom:24px">Tạo tài khoản để nhận nhiều ưu đãi và quản lý đơn hàng</p>
+        <div class="form-group">
+            <label>Tên đăng nhập</label>
+            <input type="text" id="mvc-reg-username" class="form-control" placeholder="Tối thiểu 3 ký tự">
+        </div>
+        <div class="form-group">
+            <label>Họ và tên</label>
+            <input type="text" id="mvc-reg-fullname" class="form-control" placeholder="Họ và tên đầy đủ">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="mvc-reg-email" class="form-control" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="tel" id="mvc-reg-phone" class="form-control" placeholder="0xxxxxxxxx">
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="mvc-reg-password" class="form-control" placeholder="Tối thiểu 6 ký tự">
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="doMvcRegister()">Tạo tài khoản ngay</button>
+        <div style="text-align:center;margin-top:16px;font-size:13px">
+            Đã có tài khoản? <a href="/account/login">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+<script>
+async function doMvcRegister() {
+    const u = document.getElementById('mvc-reg-username').value.trim();
+    const fn = document.getElementById('mvc-reg-fullname').value.trim();
+    const em = document.getElementById('mvc-reg-email').value.trim();
+    const ph = document.getElementById('mvc-reg-phone').value.trim();
+    const pw = document.getElementById('mvc-reg-password').value;
+    if(!u || !fn || !em || !pw) { toast('Vui lòng điền đủ các trường bắt buộc', 'warning'); return; }
+    
+    document.getElementById('reg-username').value = u;
+    document.getElementById('reg-fullname').value = fn;
+    document.getElementById('reg-email').value = em;
+    document.getElementById('reg-phone').value = ph;
+    document.getElementById('reg-password').value = pw;
+    await doRegister();
+    if(isLoggedIn()) { window.location.href = '/'; }
+}
+</script>

@@ -1,0 +1,2117 @@
+@model Web.Models.ProductDetailDto
+@{
+    ViewData["Title"] = $"{Model.Name} – Chính hãng tại TechStore";
+    var price = Model.SalePrice > 0 ? Model.SalePrice : Model.Price;
+    var hasSale = Model.SalePrice > 0 && Model.SalePrice < Model.Price;
+    var discountPercent = hasSale ? Math.Round((1 - (Model.SalePrice / Model.Price)) * 100) : 0;
+    var saveAmount = hasSale ? (Model.Price - Model.SalePrice) : 0;
+    var images = Model.Images != null && Model.Images.Count > 0 
+        ? Model.Images 
+        : new List<string> { !string.IsNullOrEmpty(Model.PrimaryImage) ? Model.PrimaryImage : "/images/placeholder.svg" };
+    var primaryImg = images.First();
+
+    var dbVariants = Model.Variants ?? new List<Web.Models.ProductVariantDto>();
+    var hasDbVariants = dbVariants.Count > 0;
+    var distinctVariants = hasDbVariants 
+        ? dbVariants.Select(v => v.VariantName).Distinct().ToList()
+        : new List<string> { "Tiêu chuẩn" };
+    var distinctColors = hasDbVariants 
+        ? dbVariants.GroupBy(v => v.ColorName).Select(g => g.First()).ToList()
+        : new List<Web.Models.ProductVariantDto> { new() { ColorName = "Tiêu chuẩn", ColorCode = "#3b3c3e" } };
+
+    // Tách reviews thành Đánh giá (Rating > 0) và Bình luận (Rating == 0)
+    var allReviews = Model.Reviews ?? new List<Web.Models.ReviewDto>();
+    var ratingReviews = allReviews.Where(r => r.Rating > 0).ToList();
+    var commentReviews = allReviews.Where(r => r.Rating == 0).ToList();
+    var productCode = !string.IsNullOrWhiteSpace(Model.ProductCode) ? Model.ProductCode : $"SP-{Model.Id:D3}";
+    var variantSelectorTitle = (Model.CategoryId == 1 || Model.CategoryId == 5 || Model.CategorySlug == "dien-thoai" || Model.CategorySlug == "tablet")
+        ? "1. Chọn phiên bản bộ nhớ:"
+        : (Model.CategoryId == 2 || Model.CategorySlug == "laptop")
+            ? "1. Chọn cấu hình:"
+            : (Model.CategoryId == 4 || Model.CategorySlug == "dong-ho")
+                ? "1. Chọn kích thước & kết nối:"
+                : "1. Chọn phiên bản:";
+    var highlights = (Model.Highlights ?? new List<string>()).Where(h => !string.IsNullOrWhiteSpace(h)).ToList();
+    var validSpecs = (Model.Specs ?? new List<Web.Models.ProductSpecDto>()).Where(s => !string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Value)).ToList();
+}
+
+<style>
+    /* TECHSTORE PRODUCT DETAIL - BRANDED & MODERN UI */
+    .pdetail-container {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 16px 60px;
+    }
+
+    /* Breadcrumb */
+    .pdetail-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 0;
+        font-size: 13.5px;
+        color: var(--text-3);
+        flex-wrap: wrap;
+    }
+    .pdetail-breadcrumb a {
+        color: var(--text-2);
+        text-decoration: none;
+        transition: color .2s;
+    }
+    .pdetail-breadcrumb a:hover {
+        color: var(--primary);
+    }
+    .pdetail-breadcrumb .separator {
+        color: var(--border);
+    }
+    .pdetail-breadcrumb .current {
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    /* Product Header Bar */
+    .pdetail-header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .pdetail-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0 0 10px 0;
+        line-height: 1.3;
+    }
+    .pdetail-meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 13.5px;
+        color: var(--text-3);
+        flex-wrap: wrap;
+    }
+    .pdetail-meta .stars {
+        color: #f59e0b;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .pdetail-meta .sku {
+        background: var(--bg-2);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    /* 2 Columns Top Layout */
+    .pdetail-top-grid {
+        display: grid;
+        grid-template-columns: 480px 1fr;
+        gap: 40px;
+        align-items: start;
+        margin-bottom: 48px;
+    }
+    @@media (max-width: 992px) {
+        .pdetail-top-grid {
+            grid-template-columns: 1fr;
+            gap: 28px;
+        }
+    }
+
+    /* Left Column: Gallery & Trust Box */
+    .pdetail-gallery-wrap {
+        position: sticky;
+        top: 90px;
+    }
+    .pdetail-main-img-box {
+        position: relative;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .pdetail-main-img-box img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform .3s ease;
+    }
+    .pdetail-main-img-box:hover img {
+        transform: scale(1.04);
+    }
+    .pdetail-badge-top {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 2;
+    }
+    .pdetail-tag {
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 4px 9px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .pdetail-tag-sale {
+        background: #e11d48;
+        color: #fff;
+    }
+    .pdetail-tag-official {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .pdetail-thumbs-slider {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+    }
+    .pdetail-thumb-item {
+        width: 72px;
+        height: 72px;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+        background: #fff;
+        padding: 4px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all .2s;
+    }
+    .pdetail-thumb-item:hover, .pdetail-thumb-item.active {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+    .pdetail-thumb-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    /* Trust Box */
+    .pdetail-trust-box {
+        margin-top: 24px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 20px;
+    }
+    .pdetail-trust-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pdetail-trust-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--text-2);
+    }
+    @@media (max-width: 576px) {
+        .pdetail-trust-list {
+            grid-template-columns: 1fr;
+        }
+    }
+    .pdetail-trust-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1.4;
+    }
+    .pdetail-trust-item .icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    /* Right Column: Pricing & Options & Actions */
+    .pdetail-price-box {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(99, 102, 241, 0.06) 100%);
+        border: 1.5px solid rgba(79, 70, 229, 0.2);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 22px;
+    }
+    .pdetail-price-main {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .pdetail-curr-price {
+        font-size: 32px;
+        font-weight: 900;
+        color: #e11d48;
+        letter-spacing: -0.5px;
+    }
+    .pdetail-orig-price {
+        font-size: 17px;
+        color: var(--text-3);
+        text-decoration: line-through;
+    }
+    .pdetail-save-badge {
+        background: #ffe4e6;
+        color: #e11d48;
+        font-weight: 700;
+        font-size: 12.5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+
+    /* Section Titles */
+    .pdetail-section-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 18px 0 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .pdetail-section-title .required-star {
+        color: #e11d48;
+        font-weight: 800;
+    }
+
+    /* Variant & Color Chips */
+    .pdetail-variant-chips {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .pdetail-chip {
+        border: 1.5px solid var(--border);
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 10px 18px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        transition: all .2s;
+        min-width: 95px;
+        user-select: none;
+    }
+    .pdetail-chip:hover {
+        border-color: var(--primary);
+    }
+    .pdetail-chip.active {
+        border-color: var(--primary) !important;
+        background: rgba(79, 70, 229, 0.08) !important;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25) !important;
+    }
+    .pdetail-chip .chip-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text);
+    }
+    .pdetail-chip .chip-sub {
+        font-size: 11.5px;
+        color: var(--text-3);
+    }
+    .pdetail-chip.active .chip-name {
+        color: var(--primary);
+    }
+
+    .pdetail-color-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 9px 16px;
+        cursor: pointer;
+        background: var(--bg-card);
+        transition: all .2s;
+        user-select: none;
+    }
+    .pdetail-color-chip:hover {
+        border-color: var(--primary);
+    }
+    .pdetail-color-chip.active {
+        border-color: var(--primary) !important;
+        background: rgba(79, 70, 229, 0.08) !important;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25) !important;
+    }
+    .pdetail-color-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.15);
+        flex-shrink: 0;
+    }
+    .pdetail-color-thumb {
+        width: 38px;
+        height: 38px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: #f3f4f6;
+        flex-shrink: 0;
+    }
+    .pdetail-color-chip .color-label {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+    }
+    .pdetail-color-chip .color-name {
+        font-weight: 600;
+        font-size: 13.5px;
+    }
+    .pdetail-color-chip .color-stock,
+    .pdetail-chip .chip-stock {
+        font-size: 11px;
+        font-weight: 600;
+        color: #10b981;
+    }
+    .pdetail-color-chip .color-stock.low,
+    .pdetail-chip .chip-stock.low {
+        color: #f59e0b;
+    }
+    .pdetail-color-chip .color-stock.out,
+    .pdetail-chip .chip-stock.out {
+        color: #ef4444;
+    }
+    .pdetail-chip.disabled,
+    .pdetail-color-chip.disabled {
+        opacity: .5;
+        cursor: not-allowed;
+        background: repeating-linear-gradient(135deg, var(--bg-card), var(--bg-card) 6px, rgba(0,0,0,0.03) 6px, rgba(0,0,0,0.03) 12px);
+    }
+    .pdetail-chip.disabled:hover,
+    .pdetail-color-chip.disabled:hover {
+        border-color: var(--border);
+    }
+    #pdetail-primary-image {
+        transition: opacity .18s ease;
+    }
+    #pdetail-primary-image.swapping {
+        opacity: .15;
+    }
+
+    /* Warning outline when user forgot to select */
+    .selection-needed {
+        animation: pulseWarning 1.2s infinite;
+        border-radius: 14px;
+        padding: 6px;
+    }
+    @@keyframes pulseWarning {
+        0% { box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.4); }
+        50% { box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.8); }
+        100% { box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.4); }
+    }
+
+    /* Promo Box */
+    .pdetail-promo-box {
+        border: 1.5px dashed rgba(79, 70, 229, 0.4);
+        background: rgba(79, 70, 229, 0.02);
+        border-radius: 14px;
+        margin: 22px 0;
+        overflow: hidden;
+    }
+    .pdetail-promo-header {
+        background: #eef2ff;
+        padding: 10px 16px;
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pdetail-promo-body {
+        padding: 14px 16px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text-2);
+    }
+    .pdetail-promo-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .pdetail-promo-item:last-child {
+        margin-bottom: 0;
+    }
+    .pdetail-promo-item .tick {
+        color: #10b981;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    /* CTA Actions */
+    .pdetail-cta-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
+    }
+    .pdetail-btn-buynow {
+        background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 15px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all .2s;
+        box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+        display: block;
+        width: 100%;
+    }
+    .pdetail-btn-buynow:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+    }
+    .pdetail-btn-buynow .main-text {
+        font-size: 17px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: block;
+    }
+    .pdetail-btn-buynow .sub-text {
+        font-size: 12px;
+        opacity: 0.9;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .pdetail-btn-addcart {
+        border-radius: 14px;
+        padding: 14px 20px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all .2s;
+        border: 1.5px solid var(--primary);
+        background: rgba(79, 70, 229, 0.05);
+        color: var(--primary);
+        width: 100%;
+    }
+    .pdetail-btn-addcart:hover {
+        background: rgba(79, 70, 229, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .pdetail-hotline-bar {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--text-3);
+        background: var(--bg-2);
+        padding: 10px 16px;
+        border-radius: 10px;
+    }
+    .pdetail-hotline-bar a {
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    /* SPECS & OVERVIEW */
+    .pdetail-bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 36px;
+        align-items: start;
+        border-top: 1px solid var(--border);
+        padding-top: 40px;
+    }
+    @@media (max-width: 992px) {
+        .pdetail-bottom-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .pdetail-article-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 30px;
+    }
+    .pdetail-article-box h2 {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 18px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .pdetail-article-body {
+        color: var(--text-2);
+        line-height: 1.8;
+        font-size: 14.5px;
+    }
+    .pdetail-article-body h3 {
+        font-size: 16.5px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 22px 0 8px;
+    }
+    .pdetail-article-body p {
+        margin-bottom: 14px;
+    }
+
+    .pdetail-specs-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        position: sticky;
+        top: 90px;
+    }
+    .pdetail-specs-box h2 {
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 16px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pdetail-specs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+    }
+    .pdetail-specs-table tr {
+        border-bottom: 1px solid var(--border);
+    }
+    .pdetail-specs-table tr:nth-child(even) {
+        background: var(--bg-2);
+    }
+    .pdetail-specs-table td {
+        padding: 10px 12px;
+        vertical-align: top;
+    }
+    .pdetail-specs-table td.spec-k {
+        width: 42%;
+        color: var(--text-3);
+        font-weight: 600;
+    }
+    .pdetail-specs-table td.spec-v {
+        color: var(--text);
+        font-weight: 500;
+    }
+
+    /* COMMUNITY SECTION: COMMENTS & REVIEWS (CLEAN SINGLE-ROW INPUT) */
+    .pdetail-community-section {
+        margin-top: 50px;
+        border-top: 1px solid var(--border);
+        padding-top: 40px;
+    }
+    .pdetail-community-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px;
+    }
+
+    /* Compact Comment Form (Single line + Button right) */
+    .pdetail-compact-comment-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+    .pdetail-compact-input-box {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0 14px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .pdetail-compact-input-box:focus-within {
+        border-color: #0f172a;
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+    }
+    .pdetail-compact-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 14.5px;
+        color: var(--text);
+        padding-right: 64px;
+        height: 44px;
+        font-family: inherit;
+    }
+    .pdetail-compact-char {
+        position: absolute;
+        right: 14px;
+        font-size: 12px;
+        color: #94a3b8;
+        pointer-events: none;
+    }
+    .pdetail-btn-submit-comment {
+        background: #0f172a;
+        color: #fff;
+        border: none;
+        border-radius: 24px;
+        padding: 0 24px;
+        height: 44px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .2s, transform .1s;
+    }
+    .pdetail-btn-submit-comment:hover {
+        background: var(--primary);
+    }
+
+    .pdetail-media-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13.5px;
+        color: #2563eb;
+        margin-bottom: 14px;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 8px;
+        transition: background .2s, color .2s;
+        width: fit-content;
+        user-select: none;
+    }
+    .pdetail-media-hint:hover {
+        background: rgba(37, 99, 235, 0.08);
+        color: #1d4ed8;
+    }
+    .pdetail-media-hint:active {
+        transform: scale(0.98);
+    }
+
+    /* Media Preview Container */
+    .pdetail-media-preview-container {
+        background: #f8fafc;
+        border: 1.5px dashed #93c5fd;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+    }
+    .pdetail-media-preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e40af;
+        margin-bottom: 10px;
+    }
+    .pdetail-media-preview-clear {
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .pdetail-media-preview-clear:hover {
+        text-decoration: underline;
+    }
+    .pdetail-media-preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .pdetail-media-preview-item {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1.5px solid #cbd5e1;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .pdetail-media-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pdetail-media-preview-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pdetail-media-remove-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 20px;
+        height: 20px;
+        background: rgba(15, 23, 42, 0.75);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        border: none;
+        transition: background .2s, transform .1s;
+        line-height: 1;
+    }
+    .pdetail-media-remove-btn:hover {
+        background: #ef4444;
+        transform: scale(1.1);
+    }
+    .pdetail-media-video-tag {
+        position: absolute;
+        bottom: 2px;
+        left: 2px;
+        right: 2px;
+        background: rgba(0,0,0,0.7);
+        color: #fff;
+        font-size: 9.5px;
+        padding: 1px 4px;
+        border-radius: 4px;
+        text-align: center;
+        font-weight: 700;
+    }
+    .pdetail-media-add-more {
+        width: 72px;
+        height: 72px;
+        border: 1.5px dashed #93c5fd;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #2563eb;
+        font-size: 11.5px;
+        font-weight: 700;
+        background: rgba(37, 99, 235, 0.04);
+        transition: all .2s;
+        gap: 2px;
+    }
+    .pdetail-media-add-more:hover {
+        background: rgba(37, 99, 235, 0.1);
+        border-color: #2563eb;
+    }
+
+    /* Comment Media Gallery in List */
+    .pdetail-comm-media-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        padding-left: 42px;
+    }
+    .pdetail-media-img-box {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: transform .2s, box-shadow .2s;
+        background: #f1f5f9;
+    }
+    .pdetail-media-img-box:hover {
+        transform: scale(1.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .pdetail-media-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pdetail-media-video-box {
+        max-width: 280px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+    }
+    .pdetail-media-video-box video {
+        width: 100%;
+        max-height: 200px;
+        display: block;
+    }
+
+    /* Lightbox Modal */
+    .pdetail-lightbox-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+        padding: 20px;
+    }
+    .pdetail-lightbox-modal.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .pdetail-lightbox-img {
+        max-width: 90vw;
+        max-height: 88vh;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        object-fit: contain;
+    }
+    .pdetail-lightbox-close {
+        position: absolute;
+        top: 24px;
+        right: 28px;
+        color: #fff;
+        font-size: 32px;
+        font-weight: 700;
+        cursor: pointer;
+        line-height: 1;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Category Filter Tabs: Tất cả | Đánh giá | Bình luận */
+    .pdetail-comm-tabs {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        border-bottom: 1.5px solid var(--border);
+        margin-bottom: 20px;
+    }
+    .pdetail-comm-tab {
+        padding: 12px 4px;
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--text-3);
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color .2s;
+        user-select: none;
+    }
+    .pdetail-comm-tab:hover {
+        color: var(--text);
+    }
+    .pdetail-comm-tab.active {
+        color: #e11d48;
+    }
+    .pdetail-comm-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1.5px;
+        left: 0;
+        right: 0;
+        height: 2.5px;
+        background: #e11d48;
+        border-radius: 2px;
+    }
+    .pdetail-tab-badge {
+        background: var(--bg-2);
+        color: var(--text-2);
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .pdetail-comm-tab.active .pdetail-tab-badge {
+        background: #ffe4e6;
+        color: #e11d48;
+    }
+
+    /* Reviews Box inside Tab */
+    .pdetail-review-form-box {
+        background: #f8fafc;
+        border: 1.5px dashed var(--primary);
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .pdetail-comm-item {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .pdetail-comm-item:last-child {
+        border-bottom: none;
+    }
+    .pdetail-comm-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+    .pdetail-comm-author {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 14.5px;
+        color: var(--text);
+    }
+    .pdetail-avatar-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-3);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+    }
+    .pdetail-tag-buyer {
+        background: #ecfdf5;
+        color: #059669;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .pdetail-tag-qa {
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+    }
+    .pdetail-comm-date {
+        font-size: 12px;
+        color: var(--text-3);
+    }
+    .pdetail-comm-content {
+        font-size: 14px;
+        color: var(--text-2);
+        line-height: 1.6;
+        margin-top: 6px;
+        padding-left: 42px;
+    }
+</style>
+
+<div class="pdetail-container">
+    <!-- Breadcrumb -->
+    <div class="pdetail-breadcrumb">
+        <a href="/">Trang chủ</a>
+        @if (!string.IsNullOrEmpty(Model.CategoryName))
+        {
+            <span class="separator">/</span>
+            <a href="/?cat=@(string.IsNullOrEmpty(Model.CategorySlug) ? Model.CategoryName : Model.CategorySlug)">@Model.CategoryName</a>
+        }
+        @if (!string.IsNullOrEmpty(Model.BrandName))
+        {
+            <span class="separator">/</span>
+            <a href="/?brand=@Uri.EscapeDataString(Model.BrandName)">@Model.BrandName</a>
+        }
+        <span class="separator">/</span>
+        <span class="current">@Model.Name</span>
+    </div>
+
+    <!-- Product Title & Meta Header -->
+    <div class="pdetail-header">
+        <div>
+            <h1 class="pdetail-title">@Model.Name</h1>
+            <div class="pdetail-meta">
+                <span class="stars">
+                    ★ @Model.RatingAvg.ToString("0.0")
+                </span>
+                <span>•</span>
+                <span>@ratingReviews.Count đánh giá có sao</span>
+                <span>•</span>
+                <span>@commentReviews.Count câu hỏi/bình luận</span>
+                <span>•</span>
+                <span class="sku">Mã SP: @productCode</span>
+                <span>•</span>
+                @if (Model.StockQuantity > 10)
+                {
+                    <span style="color:#10b981;font-weight:600">✓ Còn hàng (@Model.StockQuantity)</span>
+                }
+                else if (Model.StockQuantity > 0)
+                {
+                    <span style="color:#f59e0b;font-weight:600">⚠ Còn lại @Model.StockQuantity sản phẩm</span>
+                }
+                else
+                {
+                    <span style="color:#ef4444;font-weight:600">✗ Tạm hết hàng</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- 2 Columns Top Section -->
+    <div class="pdetail-top-grid">
+        <!-- Cột Trái: Hình ảnh & Cam kết -->
+        <div class="pdetail-gallery-wrap">
+            <div class="pdetail-main-img-box">
+                <div class="pdetail-badge-top">
+                    @if (hasSale)
+                    {
+                        <span class="pdetail-tag pdetail-tag-sale">🔥 Giảm @discountPercent%</span>
+                    }
+                    <span class="pdetail-tag pdetail-tag-official">✓ Chính hãng TechStore</span>
+                </div>
+                <img id="pdetail-primary-image" src="@primaryImg" alt="@Model.Name" onerror="this.src='/images/placeholder.svg'">
+            </div>
+
+            <!-- Dải thumbnails ảnh góc chụp -->
+            <div class="pdetail-thumbs-slider">
+                @for (int i = 0; i < images.Count; i++)
+                {
+                    var img = images[i];
+                    <div class="pdetail-thumb-item @(i == 0 ? "active" : "")" data-src="@img" onclick="changeMainImage(this, '@img')">
+                        <img src="@img" alt="Góc chụp @(i+1)" onerror="this.src='/images/placeholder.svg'">
+                    </div>
+                }
+            </div>
+
+            <!-- Hộp cam kết dịch vụ (Trust Box) -->
+            <div class="pdetail-trust-box">
+                <div class="pdetail-trust-title">
+                    <span>🛡️</span> Chính sách an tâm mua sắm tại TechStore
+                </div>
+                <div class="pdetail-trust-list">
+                    <div class="pdetail-trust-item">
+                        <span class="icon">✨</span>
+                        <div><b>Bảo hành 12 tháng</b> chính hãng toàn quốc.</div>
+                    </div>
+                    <div class="pdetail-trust-item">
+                        <span class="icon">🔄</span>
+                        <div><b>1 đổi 1 trong 30 ngày</b> nếu có lỗi nhà sản xuất.</div>
+                    </div>
+                    <div class="pdetail-trust-item">
+                        <span class="icon">🚚</span>
+                        <div><b>Giao hàng hỏa tốc 2H</b> tại nội thành. Miễn phí vận chuyển toàn quốc.</div>
+                    </div>
+                    <div class="pdetail-trust-item">
+                        <span class="icon">📦</span>
+                        <div><b>Hộp sản phẩm gồm:</b> Máy nguyên seal, Cáp sạc, Sách hướng dẫn.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Giá & Chọn phiên bản & Màu sắc & Đặt hàng -->
+        <div class="pdetail-actions-wrap">
+            <!-- Khung Giá Bán -->
+            <div class="pdetail-price-box">
+                <div class="pdetail-price-main">
+                    <span class="pdetail-curr-price" id="pdetail-display-price">@price.ToString("N0")₫</span>
+                    @if (hasSale)
+                    {
+                        <span class="pdetail-orig-price" id="pdetail-display-orig">@Model.Price.ToString("N0")₫</span>
+                        <span class="pdetail-save-badge">Tiết kiệm @saveAmount.ToString("N0")₫ (-@discountPercent%)</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Tùy chọn Dung lượng / Phiên bản (Lấy động từ Database) -->
+            <div id="pdetail-variant-container">
+                <div class="pdetail-section-title">
+                    <span>@variantSelectorTitle <span class="required-star">*</span> <b id="pdetail-variant-label" style="color:var(--primary);margin-left:6px">(Chưa chọn)</b></span>
+                    <span style="font-size:12px;color:var(--text-3);font-weight:normal">Bắt buộc</span>
+                </div>
+                <div class="pdetail-variant-chips">
+                    @foreach (var vName in distinctVariants)
+                    {
+                        var sampleVar = dbVariants.FirstOrDefault(v => v.VariantName == vName);
+                        var vPrice = sampleVar?.Price ?? price;
+                        var vPriceLong = (long)vPrice;
+                        <div class="pdetail-chip" data-variant="@vName" onclick="selectVariant(this, '@vName', @vPriceLong)">
+                            <span class="chip-name">@vName</span>
+                            <span class="chip-sub">@vPrice.ToString("N0")₫</span>
+                            <span class="chip-stock"></span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Tùy chọn Màu sắc (Lấy động từ Database) -->
+            <div id="pdetail-color-container" style="margin-top:20px">
+                <div class="pdetail-section-title">
+                    <span>2. Chọn màu sắc: <span class="required-star">*</span> <b id="pdetail-color-label" style="color:var(--primary);margin-left:6px">(Chưa chọn)</b></span>
+                    <span style="font-size:12px;color:var(--text-3);font-weight:normal">Bắt buộc</span>
+                </div>
+                <div class="pdetail-variant-chips">
+                    @foreach (var c in distinctColors)
+                    {
+                        var colorHex = !string.IsNullOrEmpty(c.ColorCode) ? c.ColorCode : "#3b3c3e";
+                        var colorImg = dbVariants.Where(v => v.ColorName == c.ColorName && !string.IsNullOrEmpty(v.ImageUrl)).Select(v => v.ImageUrl).FirstOrDefault();
+                        <div class="pdetail-color-chip" data-color="@c.ColorName" onclick="selectColor(this, '@c.ColorName')">
+                            @if (!string.IsNullOrEmpty(colorImg))
+                            {
+                                <img class="pdetail-color-thumb" src="@colorImg" alt="@c.ColorName" onerror="this.outerHTML='<div class=&quot;pdetail-color-dot&quot; style=&quot;background:@colorHex&quot;></div>'">
+                            }
+                            else
+                            {
+                                <div class="pdetail-color-dot" style="background:@colorHex"></div>
+                            }
+                            <span class="color-label">
+                                <span class="color-name">@c.ColorName</span>
+                                <span class="color-stock"></span>
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Khối Khuyến Mãi Đặc Quyền -->
+            <div class="pdetail-promo-box">
+                <div class="pdetail-promo-header">
+                    <span>🎁</span> ƯU ĐÃI & KHUYẾN MÃI ĐẶC QUYỀN TECHSTORE
+                </div>
+                <div class="pdetail-promo-body">
+                    <div class="pdetail-promo-item">
+                        <span class="tick">✓</span>
+                        <div>Giảm thêm <b>500.000₫</b> khi thanh toán qua VNPay-QR hoặc Chuyển khoản ngân hàng.</div>
+                    </div>
+                    <div class="pdetail-promo-item">
+                        <span class="tick">✓</span>
+                        <div><b>Thu cũ đổi mới:</b> Trợ giá lên đến <b>2.000.000₫</b> khi lên đời máy mới.</div>
+                    </div>
+                    <div class="pdetail-promo-item">
+                        <span class="tick">✓</span>
+                        <div>Tặng gói bảo hành VIP <b>12 tháng rơi vỡ vào nước</b> trị giá 1.200.000₫.</div>
+                    </div>
+                    <div class="pdetail-promo-item">
+                        <span class="tick">✓</span>
+                        <div>Giảm <b>20%</b> khi mua kèm Củ sạc nhanh 20W/30W, Tai nghe không dây hoặc Ốp lưng MagSafe.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chọn số lượng & Cụm nút Hành động Mua hàng -->
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+                <span style="font-weight:600;font-size:14px">3. Số lượng:</span>
+                <div style="display:inline-flex;align-items:center;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-card);overflow:hidden">
+                    <button type="button" onclick="adjustProductQty(-1)" style="width:38px;height:38px;border:none;background:none;font-size:20px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .2s">−</button>
+                    <input type="text" id="pdetail-qty-input" value="1" readonly style="width:44px;height:38px;text-align:center;border:none;background:none;font-weight:700;font-size:15px;color:var(--text)">
+                    <button type="button" onclick="adjustProductQty(1)" style="width:38px;height:38px;border:none;background:none;font-size:20px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .2s">+</button>
+                </div>
+                <span id="pdetail-stock-text" style="font-size:12.5px;color:var(--text-3)">(Tồn kho: @Model.StockQuantity)</span>
+            </div>
+
+            <div class="pdetail-cta-row">
+                <!-- Nút MUA NGAY to nổi bật -->
+                <button type="button" class="pdetail-btn-buynow" onclick="handleDetailBuyNow(@Model.Id)">
+                    <span class="main-text">⚡ MUA NGAY</span>
+                    <span class="sub-text">(Giao hàng tận nơi miễn phí hoặc nhận tại cửa hàng)</span>
+                </button>
+
+                <!-- Nút THÊM VÀO GIỎ HÀNG -->
+                <button type="button" class="pdetail-btn-addcart" onclick="handleDetailAddToCart(@Model.Id)">
+                    <span>🛒</span>
+                    <span>THÊM VÀO GIỎ HÀNG</span>
+                </button>
+            </div>
+
+            <!-- Hotline tư vấn -->
+            <div class="pdetail-hotline-bar">
+                <span>📞 Cần tư vấn hỗ trợ mua hàng ngay?</span>
+                <a href="tel:18006601">Tổng đài miễn phí: 1800.6601</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2 Columns Bottom Section: Bài viết Đánh giá & Bảng Thông số -->
+    <div class="pdetail-bottom-grid">
+        <!-- Cột Trái: Đặc điểm nổi bật & Mô tả chi tiết -->
+        <div class="pdetail-article-box">
+            @if (highlights.Count > 0)
+            {
+                <h2><span>🌟</span> Đặc điểm nổi bật của @Model.Name</h2>
+                <div style="background:linear-gradient(135deg,rgba(79,70,229,0.06),rgba(124,58,237,0.04));border:1px solid rgba(79,70,229,0.18);border-radius:14px;padding:18px 20px;margin-bottom:24px">
+                    <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px">
+                        @foreach (var hl in highlights)
+                        {
+                            <li style="display:flex;align-items:flex-start;gap:10px;font-size:14.5px;line-height:1.55;color:var(--text)">
+                                <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px">✓</span>
+                                <span>@hl</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <h2><span>📝</span> Mô tả chi tiết sản phẩm</h2>
+            <div class="pdetail-article-body">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    foreach (var para in Model.Description.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p style="font-size:15px;line-height:1.75;color:var(--text-2);margin-bottom:14px">@para</p>
+                    }
+                }
+                else
+                {
+                    <p style="font-size:15px;line-height:1.75;color:var(--text-2)">
+                        <b>@Model.Name</b> là sản phẩm chính hãng thuộc danh mục <b>@(Model.CategoryName ?? "Công nghệ")</b> do <b>@(Model.BrandName ?? "TechStore")</b> phân phối chính thức tại hệ thống TechStore, đi kèm chế độ bảo hành 12 tháng toàn quốc và hỗ trợ kỹ thuật trọn đời.
+                    </p>
+                }
+            </div>
+        </div>
+
+        <!-- Cột Phải: Bảng Thông số kỹ thuật theo đúng loại sản phẩm -->
+        <div class="pdetail-specs-box">
+            <h2><span>📋</span> Thông số kỹ thuật</h2>
+            @if (validSpecs.Count > 0)
+            {
+                <table class="pdetail-specs-table">
+                    <tbody>
+                        @foreach (var spec in validSpecs)
+                        {
+                            <tr>
+                                <td class="spec-k">@spec.Key</td>
+                                <td class="spec-v">@spec.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="padding:24px 16px;text-align:center;color:var(--text-3);font-size:14px;background:var(--bg-2);border-radius:12px">
+                    Sản phẩm này không áp dụng hoặc chưa cập nhật thông số kỹ thuật chi tiết.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- KHU VỰC CỘNG ĐỒNG: HỎI ĐÁP BÌNH LUẬN & ĐÁNH GIÁ CÓ SAO -->
+    <div class="pdetail-community-section">
+        <div class="pdetail-community-card">
+            <!-- Khung Gửi Bình Luận gọn gàng (Chuẩn như ảnh mẫu) -->
+            <div class="pdetail-compact-comment-row">
+                <div class="pdetail-compact-input-box">
+                    <input type="text" id="pdetail-comment-input" class="pdetail-compact-input" placeholder="Nhập nội dung bình luận..." maxlength="3000" oninput="updateCharCount(this)">
+                    <span class="pdetail-compact-char" id="pdetail-char-count">0/3000</span>
+                </div>
+                <button type="button" id="pdetail-submit-comment-btn" class="pdetail-btn-submit-comment" onclick="submitQuickComment(@Model.Id)">Gửi bình luận</button>
+            </div>
+
+            <!-- Nút Thêm tối đa 5 ảnh và 1 video -->
+            <input type="file" id="pdetail-media-file-input" multiple accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleMediaFilesSelected(this)">
+            <div class="pdetail-media-hint" onclick="triggerSelectMedia()" title="Bấm để chọn tối đa 5 ảnh và 1 video">
+                <span>📷</span>
+                <span>Thêm tối đa 5 ảnh và 1 video</span>
+            </div>
+
+            <!-- Preview các ảnh và video đã chọn -->
+            <div id="pdetail-media-preview-container" class="pdetail-media-preview-container" style="display:none">
+                <div class="pdetail-media-preview-header">
+                    <span>📎 Đã chọn: <span id="pdetail-media-count-text">0 ảnh, 0 video</span></span>
+                    <span class="pdetail-media-preview-clear" onclick="clearSelectedMedia()">✕ Bỏ chọn tất cả</span>
+                </div>
+                <div id="pdetail-media-preview-list" class="pdetail-media-preview-list"></div>
+            </div>
+
+            <!-- Thanh Tabs phân loại: Tất cả (N) | Đánh giá (N) | Bình luận (N) -->
+            <div class="pdetail-comm-tabs">
+                <div class="pdetail-comm-tab active" onclick="switchCommTab('all', this)">
+                    <span>Tất cả</span>
+                    <span class="pdetail-tab-badge">@allReviews.Count</span>
+                </div>
+                <div class="pdetail-comm-tab" onclick="switchCommTab('reviews', this)">
+                    <span>Đánh giá</span>
+                    <span class="pdetail-tab-badge">@ratingReviews.Count</span>
+                </div>
+                <div class="pdetail-comm-tab" onclick="switchCommTab('comments', this)">
+                    <span>Bình luận</span>
+                    <span class="pdetail-tab-badge">@commentReviews.Count</span>
+                </div>
+            </div>
+
+            <!-- Khối gửi ĐÁNH GIÁ CÓ SAO (Dành riêng cho khách đã mua và đơn hoàn thành) -->
+            <div id="pdetail-review-form-box" class="pdetail-review-form-box" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0">⭐ Gửi Đánh Giá Sản Phẩm (Dành cho khách hàng đã mua)</h3>
+                    <span style="font-size:12.5px;color:#059669;font-weight:600">✓ Đã xác nhận đơn hàng thành công</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                    <span style="font-size:13.5px;font-weight:600">Số sao:</span>
+                    <div id="pdetail-star-picker" style="font-size:26px;color:#cbd5e1;cursor:pointer;display:flex;gap:4px">
+                        <span onclick="setPdetailStar(1)">★</span>
+                        <span onclick="setPdetailStar(2)">★</span>
+                        <span onclick="setPdetailStar(3)">★</span>
+                        <span onclick="setPdetailStar(4)">★</span>
+                        <span onclick="setPdetailStar(5)">★</span>
+                    </div>
+                    <span id="pdetail-star-text" style="font-size:13px;font-weight:600;color:#f59e0b"></span>
+                </div>
+                <textarea id="pdetail-review-input" rows="3" placeholder="Chia sẻ cảm nhận về sản phẩm sau khi sử dụng..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;box-sizing:border-box;margin-bottom:10px"></textarea>
+                <button type="button" class="btn btn-primary" onclick="submitPdetailReview(@Model.Id)">⭐ Gửi Đánh Giá Có Sao</button>
+            </div>
+
+            <div id="pdetail-review-locked-notice" style="display:none;background:#f8fafc;padding:12px 16px;border-radius:10px;font-size:13px;color:var(--text-3);margin-bottom:20px;border:1px dashed var(--border)">
+                🔒 <b>Lưu ý:</b> Chỉ những khách hàng đã mua và nhận hàng thành công mới có thể gửi đánh giá có sao. Bạn hoàn toàn có thể đặt câu hỏi ở ô <b>Bình luận</b> phía trên!
+            </div>
+
+            <!-- Danh sách Đánh giá & Bình luận -->
+            <div id="pdetail-comm-list">
+                @if (allReviews.Count > 0)
+                {
+                    foreach (var rev in allReviews)
+                    {
+                        var isReview = rev.Rating > 0;
+                        var rawComment = rev.Comment ?? "";
+                        var displayCommentText = rawComment;
+                        string? mediaJson = null;
+                        int mediaMarker = rawComment.IndexOf("<!--REVIEW_MEDIA:");
+                        if (mediaMarker >= 0)
+                        {
+                            int endMarker = rawComment.IndexOf("-->", mediaMarker);
+                            if (endMarker > mediaMarker)
+                            {
+                                mediaJson = rawComment.Substring(mediaMarker + 17, endMarker - (mediaMarker + 17));
+                                displayCommentText = rawComment.Substring(0, mediaMarker).Trim();
+                            }
+                        }
+
+                        <div class="pdetail-comm-item" data-type="@(isReview ? "review" : "comment")">
+                            <div class="pdetail-comm-header">
+                                <div class="pdetail-comm-author">
+                                    <div class="pdetail-avatar-circle">
+                                        @(string.IsNullOrEmpty(rev.Username) ? "U" : rev.Username.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <span>@rev.Username</span>
+                                    @if (isReview)
+                                    {
+                                        <span class="pdetail-tag-buyer">✓ Đã mua tại TechStore</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="pdetail-tag-qa">Hỏi đáp / Bình luận</span>
+                                    }
+                                </div>
+                                <span class="pdetail-comm-date">@rev.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+
+                            @if (isReview)
+                            {
+                                <div style="color:#f59e0b;font-size:14px;margin-bottom:4px;padding-left:42px">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        @(s <= rev.Rating ? "★" : "☆")
+                                    }
+                                </div>
+                            }
+
+                            <div class="pdetail-comm-content">
+                                @if (!string.IsNullOrWhiteSpace(displayCommentText))
+                                {
+                                    <div style="margin-bottom:6px">@displayCommentText</div>
+                                }
+                                else if (string.IsNullOrEmpty(mediaJson))
+                                {
+                                    <div>(Không có nội dung)</div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(mediaJson))
+                                {
+                                    try
+                                    {
+                                        var mediaItems = System.Text.Json.JsonSerializer.Deserialize<List<Web.Models.ReviewMediaItem>>(mediaJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                        if (mediaItems != null && mediaItems.Count > 0)
+                                        {
+                                            <div class="pdetail-comm-media-gallery">
+                                                @foreach (var m in mediaItems)
+                                                {
+                                                    if (m.Type == "video")
+                                                    {
+                                                        <div class="pdetail-media-video-box">
+                                                            <video src="@m.Url" controls preload="metadata"></video>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="pdetail-media-img-box" onclick="openMediaLightbox('@m.Url')">
+                                                            <img src="@m.Url" alt="Ảnh đính kèm" loading="lazy" />
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                    catch { }
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p style="color:var(--text-3);font-style:italic;text-align:center;padding:30px 0" id="pdetail-empty-msg">Chưa có bình luận hay đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đặt câu hỏi!</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox xem ảnh lớn -->
+<div id="pdetail-lightbox" class="pdetail-lightbox-modal" onclick="closeMediaLightbox()">
+    <span class="pdetail-lightbox-close" onclick="closeMediaLightbox()">&times;</span>
+    <img id="pdetail-lightbox-img" class="pdetail-lightbox-img" src="" alt="Ảnh phóng to" onclick="event.stopPropagation()">
+</div>
+
+<script>
+    // State lưu cấu hình người dùng chọn (Đảm bảo là integer number chuẩn trong JS)
+    var selectedVariant = null;
+    var selectedColor = null;
+    var selectedPrice = @((long)price);
+    var basePrice = @((long)price);
+    var stockQty = @Model.StockQuantity;
+    var defaultImage = '@primaryImg';
+
+    var rawDbVariants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Variants ?? new List<Web.Models.ProductVariantDto>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+
+    function setMainImage(src, animate) {
+        var main = document.getElementById('pdetail-primary-image');
+        if (!main || !src) return;
+        if (main.getAttribute('src') === src) return;
+        if (animate) {
+            main.classList.add('swapping');
+            setTimeout(function() {
+                main.src = src;
+                main.classList.remove('swapping');
+            }, 130);
+        } else {
+            main.src = src;
+        }
+        // Đồng bộ thumbnail đang active theo ảnh hiện tại
+        document.querySelectorAll('.pdetail-thumb-item').forEach(function(t) {
+            t.classList.toggle('active', t.getAttribute('data-src') === src);
+        });
+    }
+
+    // Click thumbnail: đổi ảnh chính, nếu là ảnh của 1 màu thì chọn luôn màu đó
+    function changeMainImage(el, src) {
+        setMainImage(src, true);
+        var v = rawDbVariants.find(function(x) { return x.imageUrl === src; });
+        if (v && v.colorName !== selectedColor) {
+            var chip = document.querySelector('.pdetail-color-chip[data-color="' + v.colorName + '"]');
+            if (chip && !chip.classList.contains('disabled')) selectColor(chip, v.colorName, true);
+        }
+    }
+
+    function imageForColor(colorName) {
+        var v = rawDbVariants.find(function(x) { return x.colorName === colorName && x.imageUrl; });
+        return v ? v.imageUrl : null;
+    }
+
+    // Tổng tồn kho theo bộ lọc (phiên bản và/hoặc màu). Bỏ trống = tất cả.
+    function stockOf(variantName, colorName) {
+        if (!rawDbVariants.length) return stockQty;
+        return rawDbVariants
+            .filter(function(v) {
+                return (!variantName || v.variantName === variantName) && (!colorName || v.colorName === colorName);
+            })
+            .reduce(function(s, v) { return s + (v.stockQuantity || 0); }, 0);
+    }
+
+    function stockLabel(n) {
+        if (n <= 0) return { text: 'Hết hàng', cls: 'out' };
+        if (n <= 5) return { text: 'Chỉ còn ' + n, cls: 'low' };
+        return { text: 'Còn ' + n, cls: '' };
+    }
+
+    // Cập nhật số lượng còn lại hiển thị trên từng chip phiên bản / màu sắc
+    function refreshAvailability() {
+        if (!rawDbVariants.length) return;
+
+        document.querySelectorAll('.pdetail-chip').forEach(function(chip) {
+            var name = chip.getAttribute('data-variant');
+            var n = stockOf(name, selectedColor);
+            var lbl = stockLabel(n);
+            var s = chip.querySelector('.chip-stock');
+            if (s) { s.textContent = lbl.text; s.className = 'chip-stock ' + lbl.cls; }
+            chip.classList.toggle('disabled', n <= 0);
+        });
+
+        document.querySelectorAll('.pdetail-color-chip').forEach(function(chip) {
+            var color = chip.getAttribute('data-color');
+            var n = stockOf(selectedVariant, color);
+            var lbl = stockLabel(n);
+            var s = chip.querySelector('.color-stock');
+            if (s) { s.textContent = lbl.text; s.className = 'color-stock ' + lbl.cls; }
+            chip.classList.toggle('disabled', n <= 0);
+        });
+    }
+
+    function updateMatchedVariant() {
+        if (!rawDbVariants || rawDbVariants.length === 0) return;
+
+        var matched = rawDbVariants.find(function(v) {
+            return (selectedVariant ? v.variantName === selectedVariant : true) &&
+                   (selectedColor ? v.colorName === selectedColor : true);
+        });
+
+        refreshAvailability();
+
+        // Ảnh theo màu đang chọn
+        if (selectedColor) {
+            var colorImg = (matched && matched.imageUrl) || imageForColor(selectedColor);
+            setMainImage(colorImg || defaultImage, true);
+        }
+
+        if (!matched) return;
+
+        selectedPrice = matched.price;
+        var display = document.getElementById('pdetail-display-price');
+        if (display && typeof fmt === 'function') display.textContent = fmt(matched.price);
+
+        // Tồn kho của đúng tổ hợp đã chọn (hoặc tổng theo phần đã chọn)
+        stockQty = stockOf(selectedVariant, selectedColor);
+        var stockText = document.getElementById('pdetail-stock-text');
+        if (stockText) {
+            var parts = [];
+            if (selectedVariant) parts.push(selectedVariant);
+            if (selectedColor) parts.push(selectedColor);
+            stockText.textContent = stockQty > 0
+                ? '(Còn ' + stockQty + ' sản phẩm' + (parts.length ? ' – ' + parts.join(' / ') : '') + ')'
+                : '(Tạm hết hàng' + (parts.length ? ' – ' + parts.join(' / ') : '') + ')';
+            stockText.style.color = stockQty > 0 ? (stockQty <= 5 ? '#f59e0b' : 'var(--text-3)') : '#ef4444';
+        }
+
+        var qtyInput = document.getElementById('pdetail-qty-input');
+        if (qtyInput) {
+            var cur = parseInt(qtyInput.value) || 1;
+            if (stockQty > 0 && cur > stockQty) qtyInput.value = stockQty;
+        }
+    }
+
+    function selectVariant(el, name, priceVal) {
+        if (el.classList.contains('disabled')) {
+            if (typeof toast === 'function') toast('Phiên bản này đã hết hàng ở màu đang chọn', 'info');
+            return;
+        }
+        document.querySelectorAll('.pdetail-chip').forEach(function(c) {
+            c.classList.remove('active');
+        });
+        el.classList.add('active');
+        selectedVariant = name;
+        selectedPrice = priceVal;
+
+        var label = document.getElementById('pdetail-variant-label');
+        if (label) label.textContent = name;
+
+        var container = document.getElementById('pdetail-variant-container');
+        if (container) container.classList.remove('selection-needed');
+
+        var display = document.getElementById('pdetail-display-price');
+        if (display && typeof fmt === 'function') {
+            display.textContent = fmt(priceVal);
+        }
+
+        // Nếu màu đang chọn hết hàng ở phiên bản mới thì tự chuyển sang màu còn hàng đầu tiên
+        if (selectedColor && stockOf(name, selectedColor) <= 0) {
+            var alt = Array.prototype.find.call(document.querySelectorAll('.pdetail-color-chip'), function(c) {
+                return stockOf(name, c.getAttribute('data-color')) > 0;
+            });
+            if (alt) {
+                selectColor(alt, alt.getAttribute('data-color'), true);
+                return;
+            }
+        }
+
+        updateMatchedVariant();
+    }
+
+    function selectColor(el, colorName, skipAvailabilityToast) {
+        if (el.classList.contains('disabled')) {
+            if (typeof toast === 'function' && !skipAvailabilityToast) toast('Màu này đã hết hàng ở phiên bản đang chọn', 'info');
+            return;
+        }
+        document.querySelectorAll('.pdetail-color-chip').forEach(function(c) {
+            c.classList.remove('active');
+        });
+        el.classList.add('active');
+        selectedColor = colorName;
+
+        var label = document.getElementById('pdetail-color-label');
+        if (label) label.textContent = colorName;
+
+        var container = document.getElementById('pdetail-color-container');
+        if (container) container.classList.remove('selection-needed');
+
+        updateMatchedVariant();
+    }
+
+    function adjustProductQty(delta) {
+        var input = document.getElementById('pdetail-qty-input');
+        if (!input) return;
+        var current = parseInt(input.value) || 1;
+        var next = current + delta;
+        if (next < 1) next = 1;
+        if (stockQty > 0 && next > stockQty) {
+            next = stockQty;
+            if (typeof toast === 'function') toast('Chỉ còn ' + stockQty + ' sản phẩm trong kho', 'info');
+        }
+        input.value = next;
+    }
+
+    function validateSelections() {
+        if (!selectedVariant) {
+            var vContainer = document.getElementById('pdetail-variant-container');
+            if (vContainer) {
+                vContainer.classList.add('selection-needed');
+                vContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (typeof toast === 'function') toast('⚠️ Vui lòng chọn phiên bản bộ nhớ trước khi tiếp tục!', 'error');
+            return false;
+        }
+
+        if (!selectedColor) {
+            var cContainer = document.getElementById('pdetail-color-container');
+            if (cContainer) {
+                cContainer.classList.add('selection-needed');
+                cContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (typeof toast === 'function') toast('⚠️ Vui lòng chọn màu sắc sản phẩm trước khi tiếp tục!', 'error');
+            return false;
+        }
+
+        if (rawDbVariants.length > 0 && stockOf(selectedVariant, selectedColor) <= 0) {
+            if (typeof toast === 'function') toast('😔 Phiên bản / màu sắc này tạm hết hàng, vui lòng chọn loại khác!', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    async function handleDetailAddToCart(productId) {
+        if (!validateSelections()) return;
+
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            if (typeof toast === 'function') toast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'info');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
+        var qtyInput = document.getElementById('pdetail-qty-input');
+        var qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+
+        if (typeof doAddToCart === 'function') {
+            await doAddToCart(productId, qty, selectedVariant, selectedColor);
+            if (typeof openCart === 'function') openCart();
+        }
+    }
+
+    async function handleDetailBuyNow(productId) {
+        if (!validateSelections()) return;
+
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            if (typeof toast === 'function') toast('Vui lòng đăng nhập để tiến hành mua hàng', 'info');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
+        var qtyInput = document.getElementById('pdetail-qty-input');
+        var qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+
+        if (typeof doAddToCart === 'function') {
+            await doAddToCart(productId, qty, selectedVariant, selectedColor);
+        }
+
+        if (typeof openCheckout === 'function') {
+            await openCheckout();
+        } else if (typeof openCart === 'function') {
+            openCart();
+        }
+    }
+
+    function switchCommTab(type, el) {
+        document.querySelectorAll('.pdetail-comm-tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
+        if (el) el.classList.add('active');
+
+        var items = document.querySelectorAll('.pdetail-comm-item');
+        var count = 0;
+        items.forEach(function(item) {
+            var itemType = item.getAttribute('data-type');
+            if (type === 'all') {
+                item.style.display = '';
+                count++;
+            } else if (type === 'reviews' && itemType === 'review') {
+                item.style.display = '';
+                count++;
+            } else if (type === 'comments' && itemType === 'comment') {
+                item.style.display = '';
+                count++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        var emptyMsg = document.getElementById('pdetail-empty-msg');
+        if (emptyMsg) {
+            emptyMsg.style.display = count === 0 ? '' : 'none';
+        }
+    }
+
+    function updateCharCount(el) {
+        var count = el.value.length;
+        var elCount = document.getElementById('pdetail-char-count');
+        if (elCount) elCount.textContent = count + '/3000';
+    }
+
+    /* XỬ LÝ ĐÍNH KÈM HÌNH ẢNH & VIDEO TRONG BÌNH LUẬN */
+    var selectedMediaFiles = [];
+
+    function triggerSelectMedia() {
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            if (typeof toast === 'function') toast('Vui lòng đăng nhập để đính kèm hình ảnh hoặc video!', 'info');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+        var fileInput = document.getElementById('pdetail-media-file-input');
+        if (fileInput) fileInput.click();
+    }
+
+    function handleMediaFilesSelected(input) {
+        if (!input || !input.files || input.files.length === 0) return;
+
+        var newFiles = Array.from(input.files);
+        var allowedImgExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        var allowedVidExts = ['mp4', 'webm', 'mov', 'm4v'];
+
+        for (var i = 0; i < newFiles.length; i++) {
+            var f = newFiles[i];
+            var ext = (f.name.split('.').pop() || '').toLowerCase();
+            var isImg = f.type.startsWith('image/') || allowedImgExts.includes(ext);
+            var isVid = f.type.startsWith('video/') || allowedVidExts.includes(ext);
+
+            if (!isImg && !isVid) {
+                if (typeof toast === 'function') toast('Tệp "' + f.name + '" không đúng định dạng ảnh hoặc video được hỗ trợ!', 'error');
+                continue;
+            }
+
+            var currentImgs = selectedMediaFiles.filter(function(x) { return x.isImg; }).length;
+            var currentVids = selectedMediaFiles.filter(function(x) { return !x.isImg; }).length;
+
+            if (isImg) {
+                if (currentImgs >= 5) {
+                    if (typeof toast === 'function') toast('Chỉ được chọn tối đa 5 hình ảnh!', 'error');
+                    continue;
+                }
+                if (f.size > 10 * 1024 * 1024) {
+                    if (typeof toast === 'function') toast('Ảnh "' + f.name + '" vượt quá dung lượng tối đa 10MB!', 'error');
+                    continue;
+                }
+                f.isImg = true;
+                f.previewUrl = URL.createObjectURL(f);
+                selectedMediaFiles.push(f);
+            } else if (isVid) {
+                if (currentVids >= 1) {
+                    if (typeof toast === 'function') toast('Chỉ được chọn tối đa 1 video!', 'error');
+                    continue;
+                }
+                if (f.size > 60 * 1024 * 1024) {
+                    if (typeof toast === 'function') toast('Video "' + f.name + '" vượt quá dung lượng tối đa 60MB!', 'error');
+                    continue;
+                }
+                f.isImg = false;
+                f.previewUrl = URL.createObjectURL(f);
+                selectedMediaFiles.push(f);
+            }
+        }
+
+        input.value = '';
+        renderMediaPreview();
+    }
+
+    function renderMediaPreview() {
+        var container = document.getElementById('pdetail-media-preview-container');
+        var list = document.getElementById('pdetail-media-preview-list');
+        var countText = document.getElementById('pdetail-media-count-text');
+
+        if (!container || !list) return;
+
+        if (selectedMediaFiles.length === 0) {
+            container.style.display = 'none';
+            list.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        var imgCount = selectedMediaFiles.filter(function(x) { return x.isImg; }).length;
+        var vidCount = selectedMediaFiles.filter(function(x) { return !x.isImg; }).length;
+        if (countText) countText.textContent = imgCount + '/5 ảnh, ' + vidCount + '/1 video';
+
+        list.innerHTML = '';
+        selectedMediaFiles.forEach(function(file, index) {
+            var item = document.createElement('div');
+            item.className = 'pdetail-media-preview-item';
+
+            if (file.isImg) {
+                var img = document.createElement('img');
+                img.src = file.previewUrl;
+                img.alt = 'Preview ' + (index + 1);
+                item.appendChild(img);
+            } else {
+                var vid = document.createElement('video');
+                vid.src = file.previewUrl;
+                vid.muted = true;
+                item.appendChild(vid);
+
+                var tag = document.createElement('div');
+                tag.className = 'pdetail-media-video-tag';
+                tag.textContent = '▶ VIDEO';
+                item.appendChild(tag);
+            }
+
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'pdetail-media-remove-btn';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.title = 'Xóa tệp này';
+            removeBtn.onclick = function(e) {
+                e.stopPropagation();
+                removeSelectedMedia(index);
+            };
+            item.appendChild(removeBtn);
+            list.appendChild(item);
+        });
+
+        if (imgCount < 5 || vidCount < 1) {
+            var addMore = document.createElement('div');
+            addMore.className = 'pdetail-media-add-more';
+            addMore.title = 'Thêm ảnh hoặc video';
+            addMore.onclick = triggerSelectMedia;
+            addMore.innerHTML = '<span style="font-size:20px;line-height:1">+</span><span style="font-size:11px">Thêm tiếp</span>';
+            list.appendChild(addMore);
+        }
+    }
+
+    function removeSelectedMedia(index) {
+        if (selectedMediaFiles[index] && selectedMediaFiles[index].previewUrl) {
+            URL.revokeObjectURL(selectedMediaFiles[index].previewUrl);
+        }
+        selectedMediaFiles.splice(index, 1);
+        renderMediaPreview();
+    }
+
+    function clearSelectedMedia() {
+        selectedMediaFiles.forEach(function(f) {
+            if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+        });
+        selectedMediaFiles = [];
+        renderMediaPreview();
+    }
+
+    function openMediaLightbox(src) {
+        var modal = document.getElementById('pdetail-lightbox');
+        var img = document.getElementById('pdetail-lightbox-img');
+        if (modal && img) {
+            img.src = src;
+            modal.classList.add('active');
+        }
+    }
+
+    function closeMediaLightbox() {
+        var modal = document.getElementById('pdetail-lightbox');
+        if (modal) modal.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMediaLightbox();
+    });
+
+    async function submitQuickComment(productId) {
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            if (typeof toast === 'function') toast('Vui lòng đăng nhập để gửi bình luận / câu hỏi', 'info');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
+        var input = document.getElementById('pdetail-comment-input');
+        var content = input ? input.value.trim() : '';
+        if (!content && selectedMediaFiles.length === 0) {
+            if (typeof toast === 'function') toast('Vui lòng nhập nội dung hoặc đính kèm ảnh/video!', 'error');
+            if (input) input.focus();
+            return;
+        }
+
+        var submitBtn = document.getElementById('pdetail-submit-comment-btn');
+        var originalBtnText = submitBtn ? submitBtn.textContent : 'Gửi bình luận';
+
+        try {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Đang xử lý...';
+            }
+
+            var uploadedMedia = [];
+            if (selectedMediaFiles.length > 0) {
+                if (submitBtn) submitBtn.textContent = 'Đang tải tệp lên...';
+                var formData = new FormData();
+                for (var i = 0; i < selectedMediaFiles.length; i++) {
+                    formData.append('files', selectedMediaFiles[i]);
+                }
+
+                var token = (typeof authToken !== 'undefined' && authToken) ? authToken : localStorage.getItem('token');
+                var uploadRes = await fetch('/api/upload/review-media', {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    var errData = await uploadRes.json().catch(function() { return {}; });
+                    throw new Error(errData.message || 'Lỗi khi tải tệp ảnh/video lên máy chủ');
+                }
+
+                var uploadData = await uploadRes.json();
+                if (uploadData.files && uploadData.files.length > 0) {
+                    uploadedMedia = uploadData.files;
+                }
+            }
+
+            var finalContent = content;
+            if (uploadedMedia.length > 0) {
+                finalContent = (content ? content + '\n' : '') + '<!--REVIEW_MEDIA:' + JSON.stringify(uploadedMedia) + '-->';
+            }
+
+            if (submitBtn) submitBtn.textContent = 'Đang gửi bình luận...';
+
+            if (typeof api === 'function') {
+                var res = await api('POST', '/api/reviews/comment', {
+                    productId: productId,
+                    content: finalContent
+                });
+
+                if (!res.ok) {
+                    throw new Error(res.data?.message || 'Không thể gửi bình luận');
+                }
+
+                if (typeof toast === 'function') toast('Cảm ơn bạn đã gửi bình luận hỏi đáp! 💬');
+                if (input) input.value = '';
+                var elCount = document.getElementById('pdetail-char-count');
+                if (elCount) elCount.textContent = '0/3000';
+                clearSelectedMedia();
+                setTimeout(function() { window.location.reload(); }, 900);
+            }
+        } catch (err) {
+            if (typeof toast === 'function') toast(err.message || 'Đã có lỗi xảy ra', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        }
+    }
+
+    var pdetailRating = 5;
+    function setPdetailStar(star) {
+        pdetailRating = star;
+        var stars = document.querySelectorAll('#pdetail-star-picker span');
+        stars.forEach(function(s, idx) {
+            s.style.color = (idx < star) ? '#f59e0b' : '#cbd5e1';
+        });
+        var labels = ['', 'Rất tệ (1★)', 'Không hài lòng (2★)', 'Bình thường (3★)', 'Hài lòng (4★)', 'Tuyệt vời (5★)'];
+        var textEl = document.getElementById('pdetail-star-text');
+        if (textEl) textEl.textContent = labels[star] || '';
+    }
+
+    async function submitPdetailReview(productId) {
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+        var commentInput = document.getElementById('pdetail-review-input');
+        var comment = commentInput ? commentInput.value.trim() : '';
+        if (typeof api === 'function') {
+            var res = await api('POST', '/api/reviews', {
+                productId: productId,
+                rating: pdetailRating,
+                comment: comment
+            });
+            if (!res.ok) {
+                if (typeof toast === 'function') toast(res.data?.message || 'Không thể gửi đánh giá', 'error');
+                return;
+            }
+            if (typeof toast === 'function') toast('Cảm ơn bạn đã gửi đánh giá sản phẩm! ⭐⭐⭐⭐⭐');
+            setTimeout(function() { window.location.reload(); }, 1200);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        setPdetailStar(5);
+
+        // Tự động chọn sẵn phiên bản bộ nhớ và màu sắc đầu tiên để người dùng mua hàng nhanh chóng
+        refreshAvailability();
+        var firstVariant = Array.prototype.find.call(document.querySelectorAll('.pdetail-chip'), function(c) { return !c.classList.contains('disabled'); })
+            || document.querySelector('.pdetail-chip');
+        if (firstVariant) firstVariant.click();
+        var firstColor = Array.prototype.find.call(document.querySelectorAll('.pdetail-color-chip'), function(c) { return !c.classList.contains('disabled'); })
+            || document.querySelector('.pdetail-color-chip');
+        if (firstColor) firstColor.click();
+
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            var formBox = document.getElementById('pdetail-review-form-box');
+            var noticeBox = document.getElementById('pdetail-review-locked-notice');
+            try {
+                if (typeof api === 'function') {
+                    var res = await api('GET', '/api/reviews/can-review/' + @Model.Id);
+                    if (res.ok && res.data?.canReview) {
+                        if (formBox) formBox.style.display = 'block';
+                        if (noticeBox) noticeBox.style.display = 'none';
+                    } else {
+                        if (formBox) formBox.style.display = 'none';
+                        if (noticeBox) noticeBox.style.display = 'block';
+                    }
+                }
+            } catch (e) {}
+        } else {
+            var noticeBox = document.getElementById('pdetail-review-locked-notice');
+            if (noticeBox) noticeBox.style.display = 'block';
+        }
+    });
+</script>
+

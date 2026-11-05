@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = "Quản lý Kho hàng";
+}
+
+<div id="page-warehouse" class="page" >
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar" style="background: #0f172a;">
+            <div style="padding:24px;color:#fff;font-size:18px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px">
+                📦 Kho Hàng
+            </div>
+            <div class="admin-nav-item active" onclick="showWarehouseTab('inventory',this)">📋 Quản lý Tồn kho</div>
+            <div class="admin-nav-item" onclick="showWarehouseTab('orders',this)">🚚 Xử lý Giao hàng</div>
+            <div class="admin-nav-item" onclick="showPage('home')" style="margin-top:auto">← Về trang chủ</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Inventory Tab -->
+            <div id="warehouse-tab-inventory">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+                    <h2 style="margin:0">📋 Quản lý Tồn kho theo Phiên bản & Màu sắc</h2>
+                    <button class="btn btn-outline btn-sm" onclick="loadWarehouseInventory()">🔄 Làm mới</button>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px">Ảnh</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th>Tồn kho từng Phiên bản & Màu sắc</th>
+                                    <th>Tổng kho</th>
+                                    <th style="min-width:290px">Nhập / Xuất kho theo biến thể</th>
+                                </tr>
+                            </thead>
+                            <tbody id="warehouse-inventory-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="warehouse-tab-orders" >
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+                    <h2>🚚 Xử lý Giao hàng</h2>
+                    <select id="warehouse-order-filter" onchange="loadWarehouseOrders()" style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:inherit">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="processing">Đang xử lý</option>
+                        <option value="shipped">Đang giao</option>
+                        <option value="delivered">Đã giao</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã ĐH</th><th>Địa chỉ</th><th>Số lượng</th><th>Tổng tiền</th><th>Thanh toán</th><th>Trạng thái</th><th>Ngày đặt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="warehouse-orders-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

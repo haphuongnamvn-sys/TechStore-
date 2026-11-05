@@ -1,0 +1,66 @@
+﻿@model List<Web.Models.ProductListDto>
+@{
+    ViewData["Title"] = "Trang chủ – Điện tử & Công nghệ";
+}
+
+<!-- Category Bar -->
+<div class="cat-bar" id="cat-bar">
+    <div class="cat-bar-inner">
+        <button class="cat-pill active" data-slug="" onclick="filterCategory(this,'')">🔥 Tất cả</button>
+        <button class="cat-pill" data-slug="dien-thoai"         onclick="filterCategory(this,'dien-thoai')">📱 Điện thoại</button>
+        <button class="cat-pill" data-slug="laptop"             onclick="filterCategory(this,'laptop')">💻 Laptop</button>
+        <button class="cat-pill" data-slug="am-thanh"           onclick="filterCategory(this,'am-thanh')">🎧 Âm thanh</button>
+        <button class="cat-pill" data-slug="dong-ho-thong-minh" onclick="filterCategory(this,'dong-ho-thong-minh')">⌚ Đồng hồ</button>
+        <button class="cat-pill" data-slug="may-tinh-bang"      onclick="filterCategory(this,'may-tinh-bang')">📟 Máy tính bảng</button>
+        <button class="cat-pill" data-slug="phu-kien"           onclick="filterCategory(this,'phu-kien')">🔌 Phụ kiện</button>
+    </div>
+</div>
+
+<div id="page-home" class="page">
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="hero-inner">
+            <div class="hero-label">✨ Công nghệ mới nhất 2024</div>
+            <h1>Trải nghiệm mua sắm<br><span style="color:#a5b4fc">điện tử đỉnh cao</span></h1>
+            <p>Hàng chính hãng – Giao nhanh 2h – Đổi trả 30 ngày</p>
+            <div class="hero-btns">
+                <button class="hero-btn-white" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'})">Khám phá ngay →</button>
+                <button class="hero-btn-outline" onclick="filterCategory(document.querySelector('[data-slug=dien-thoai]'),'dien-thoai')">Điện thoại Hot</button>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item"><div class="stat-num">10K+</div><div class="stat-lbl">Sản phẩm</div></div>
+                <div class="stat-item"><div class="stat-num">50K+</div><div class="stat-lbl">Khách hàng</div></div>
+                <div class="stat-item"><div class="stat-num">4.9★</div><div class="stat-lbl">Đánh giá</div></div>
+                <div class="stat-item"><div class="stat-num">2h</div><div class="stat-lbl">Giao hàng</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="section container" id="products-section">
+        <div class="section-header">
+            <h2 class="section-title">Sản phẩm nổi bật</h2>
+        </div>
+        <div class="toolbar">
+            <select id="sort-select" onchange="loadProducts()">
+                <option value="">🔃 Sắp xếp</option>
+                <option value="newest">🆕 Mới nhất</option>
+                <option value="price_asc">💰 Giá tăng dần</option>
+                <option value="price_desc">💎 Giá giảm dần</option>
+                <option value="rating">⭐ Đánh giá cao</option>
+            </select>
+            <select id="brand-select" onchange="loadProducts()">
+                <option value="">🏷️ Tất cả thương hiệu</option>
+                <option value="Apple">Apple</option>
+                <option value="Samsung">Samsung</option>
+                <option value="Sony">Sony</option>
+                <option value="ASUS">ASUS</option>
+                <option value="Xiaomi">Xiaomi</option>
+                <option value="Anker">Anker</option>
+            </select>
+            <span id="result-count" style="font-size:13px;color:var(--text-3);margin-left:auto;font-weight:600"></span>
+        </div>
+        <div id="products-grid"></div>
+    </div>
+</div>

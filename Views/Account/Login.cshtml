@@ -1,0 +1,32 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập tài khoản";
+}
+<div class="container section" style="max-width:480px;margin:40px auto">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow)">
+        <h2 style="text-align:center;margin-bottom:8px">👤 Đăng nhập TechStore</h2>
+        <p style="text-align:center;color:var(--text-3);font-size:13.5px;margin-bottom:24px">Truy cập để quản lý đơn hàng và trải nghiệm mua sắm tốt nhất</p>
+        <div class="form-group">
+            <label>Tên đăng nhập</label>
+            <input type="text" id="mvc-login-username" class="form-control" placeholder="Nhập tên đăng nhập">
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="mvc-login-password" class="form-control" placeholder="Nhập mật khẩu">
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="doMvcLogin()">Đăng nhập ngay</button>
+        <div style="text-align:center;margin-top:16px;font-size:13px">
+            Chưa có tài khoản? <a href="javascript:void(0)" onclick="openAuthModal('register')">Đăng ký mới</a>
+        </div>
+    </div>
+</div>
+<script>
+async function doMvcLogin() {
+    const u = document.getElementById('mvc-login-username').value.trim();
+    const p = document.getElementById('mvc-login-password').value;
+    if(!u || !p) { toast('Vui lòng nhập đầy đủ thông tin', 'warning'); return; }
+    document.getElementById('login-username').value = u;
+    document.getElementById('login-password').value = p;
+    await doLogin();
+    if(isLoggedIn()) { window.location.href = '/'; }
+}
+</script>

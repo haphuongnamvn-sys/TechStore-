@@ -1,0 +1,59 @@
+<!-- FLOATING CHAT & AI WIDGET -->
+<div id="floating-chat-container">
+    <!-- Floating Circular Draggable Button -->
+    <button id="floating-chat-trigger" onclick="onChatTriggerClick(event)" type="button" title="Chat với TechStore & Trợ lý AI (Kéo thả để di chuyển)">
+        <span class="chat-trigger-icon">💬</span>
+        <span class="chat-trigger-tooltip">Hỗ trợ & AI</span>
+        <span id="chat-unread-badge" style="display:none">0</span>
+    </button>
+
+    <!-- Floating Chat Window (Gộp chung Trợ lý AI và Nhân viên CSKH) -->
+    <div id="floating-chat-box" style="display:none">
+        <!-- Chat Header (Kéo thả để di chuyển cửa sổ chat) -->
+        <div class="chat-box-header" id="chat-box-header" title="Kéo thả thanh này để di chuyển cửa sổ chat">
+            <div style="display:flex;align-items:center;gap:10px;pointer-events:none">
+                <div style="position:relative">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.4)">💬</div>
+                    <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#22c55e;border:2px solid #0f172a;border-radius:50%"></div>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:14px;color:#fff;display:flex;align-items:center;gap:6px">
+                        Hỗ Trợ Khách Hàng <span style="font-size:12px;opacity:0.65;font-weight:400" title="Kéo thả di chuyển">⠿</span>
+                    </div>
+                    <div style="font-size:11.5px;color:#94a3b8">Trực tuyến • AI & Nhân viên tư vấn</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+                <button type="button" class="chat-box-action-btn" onclick="resetCustomerChatSession()" title="Làm mới / Bắt đầu hội thoại mới" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:15px;padding:4px 8px;border-radius:6px;transition:var(--transition)" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">🔄</button>
+                <button type="button" class="chat-box-close" onclick="toggleFloatingChat()" title="Đóng cửa sổ chat">✕</button>
+            </div>
+        </div>
+
+        <!-- Notification Banner -->
+        <div id="chat-mode-banner" class="chat-mode-banner" style="display:flex;align-items:center;gap:8px;font-size:11.5px;background:#f8fafc;padding:8px 14px;border-bottom:1px solid var(--border);color:var(--text-2);line-height:1.4">
+            <span style="font-size:14px">💡</span>
+            <span>Bấm câu hỏi gợi ý để <strong>Trợ lý AI</strong> giải đáp nhanh, hoặc nhập tin nhắn để gửi <strong>Nhân viên CSKH</strong>!</span>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chat-messages-body" class="chat-messages-body">
+            <!-- Messages rendered dynamically -->
+        </div>
+
+        <!-- Quick suggestion chips (Chỉ khi bấm vào thì AI mới trả lời theo đúng yêu cầu) -->
+        <div id="chat-quick-chips" class="chat-quick-chips" style="display:flex">
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Shop có iPhone nào giá tốt không?')">📱 iPhone giá tốt</button>
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Tư vấn laptop mỏng nhẹ cho sinh viên')">💻 Laptop sinh viên</button>
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Kiểm tra tình trạng đơn hàng của tôi')">📦 Kiểm tra đơn</button>
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Có voucher giảm giá nào đang áp dụng không?')">🎟️ Mã voucher</button>
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Số tài khoản chuyển khoản của shop')">💳 Số tài khoản MB</button>
+            <button type="button" class="chat-chip" onclick="sendAiQuickPrompt('Chính sách bảo hành đổi trả thế nào?')">🛡️ Bảo hành 1 đổi 1</button>
+        </div>
+
+        <!-- Chat Input Footer: Nhập tin nhắn gửi cho Nhân viên CSKH -->
+        <form id="floating-chat-form" onsubmit="handleSendChatMessage(event)" class="chat-input-bar">
+            <input type="text" id="chat-user-input" placeholder="Nhắn tin với nhân viên tư vấn..." autocomplete="off">
+            <button type="submit" id="chat-send-btn" title="Gửi cho nhân viên CSKH">➤</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,199 @@
+@{
+    ViewData["Title"] = "Quản trị hệ thống TechStore";
+}
+
+<div id="page-admin" class="page" >
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div style="padding:24px;color:#fff;font-size:18px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px">
+                ⚙️ Admin Panel
+            </div>
+            <div class="admin-nav-item active" onclick="showAdminTab('dashboard',this)">📊 Dashboard</div>
+            <div class="admin-nav-item" onclick="showAdminTab('products',this)">📦 Quản lý Sản phẩm</div>
+            <div class="admin-nav-item" onclick="showAdminTab('categories',this)">🗂️ Quản lý Danh mục</div>
+            <div class="admin-nav-item" onclick="showAdminTab('orders',this)">🚚 Quản lý Đơn hàng</div>
+            <div class="admin-nav-item" onclick="showAdminTab('users',this)">👥 Người dùng</div>
+            <div class="admin-nav-item" onclick="showPage('home')" style="margin-top:auto">← Về trang chủ</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Dashboard Tab -->
+            <div id="admin-tab-dashboard">
+                <h2 style="margin-bottom:24px">📊 Tổng quan</h2>
+                <div class="stats-grid" id="admin-stats"></div>
+                <div class="card" style="padding:24px">
+                    <h3 style="margin-bottom:20px" id="admin-chart-title">📈 Doanh thu 7 ngày qua</h3>
+                    <div id="revenue-chart" style="display:flex;align-items:flex-end;gap:8px;height:160px"></div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="admin-tab-products" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+                    <div>
+                        <h2 style="margin:0">📦 Quản lý Sản phẩm</h2>
+                        <div id="admin-products-summary" style="font-size:13px;color:var(--text-3);margin-top:4px">Đang tải dữ liệu...</div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="admin-product-search" placeholder="🔍 Tìm mã SP, tên SP, màu sắc, phiên bản..."
+                               style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);width:260px;font-size:13px"
+                               oninput="filterAdminProducts()">
+                        <select id="admin-product-category" onchange="filterAdminProducts()"
+                                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px">
+                            <option value="">Tất cả danh mục</option>
+                        </select>
+                        <select id="admin-product-brand" onchange="filterAdminProducts()"
+                                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px">
+                            <option value="">Tất cả thương hiệu</option>
+                        </select>
+                        <select id="admin-product-status" onchange="filterAdminProducts()"
+                                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="active">Đang kinh doanh</option>
+                            <option value="inactive">Ngừng kinh doanh</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="loadAdminProducts(true, this)">🔄 Làm mới</button>
+                        <button class="btn btn-primary" onclick="openNewProductModal()">+ Thêm Sản Phẩm</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:90px">Ảnh & Màu</th>
+                                    <th style="min-width:210px">Mã & Tên sản phẩm</th>
+                                    <th style="min-width:240px">Phiên bản & Màu sắc</th>
+                                    <th>Giá bán</th>
+                                    <th>Danh mục & Thông tin</th>
+                                    <th>Tồn kho & Trạng thái</th>
+                                    <th style="width:140px">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-products-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Tab -->
+            <div id="admin-tab-categories" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+                    <div>
+                        <h2 style="margin:0">🗂️ Quản lý Danh mục Sản phẩm</h2>
+                        <div id="admin-categories-summary" style="font-size:13px;color:var(--text-3);margin-top:4px">Quản lý danh mục, trạng thái và bộ khung thông số kỹ thuật chuẩn cho từng loại sản phẩm</div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="admin-category-search" placeholder="🔍 Tìm tên, mã danh mục, mô tả..."
+                               style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);width:260px;font-size:13px"
+                               oninput="filterAdminCategories()">
+                        <select id="admin-category-status" onchange="filterAdminCategories()"
+                                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="inactive"> Đã ẩn / Tạm ngưng</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="loadAdminCategories(true, this)">🔄 Làm mới</button>
+                        <button class="btn btn-primary" onclick="openNewCategoryModal()">+ Thêm Danh Mục</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px">Ảnh</th>
+                                    <th style="min-width:190px">Tên & Mã danh mục</th>
+                                    <th style="min-width:220px">Mô tả</th>
+                                    <th style="min-width:260px">Bộ khung thông số kỹ thuật</th>
+                                    <th style="width:110px;text-align:center">Số SP</th>
+                                    <th style="width:130px">Trạng thái</th>
+                                    <th style="width:140px">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-categories-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="admin-tab-orders" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+                    <h2 style="margin:0">📦 Quản lý Đơn hàng</h2>
+                    <div style="display:flex;gap:10px;align-items:center">
+                        <select id="admin-order-filter" onchange="loadAdminOrders()" style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:inherit">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="processing">Đang xử lý</option>
+                            <option value="shipped">Đang giao</option>
+                            <option value="delivered">Đã giao</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="loadAdminOrders(true, this)">🔄 Làm mới</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table" id="admin-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Sản phẩm</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Thanh toán</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày đặt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-orders-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="admin-tab-users" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+                    <h2 style="margin:0">👥 Quản Lý Người Dùng & Cấp Quyền</h2>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="admin-user-search" placeholder="🔍 Tìm tên, username, email..." 
+                               style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);width:230px;font-size:13px" 
+                               oninput="debouncedLoadAdminUsers()">
+                        <select id="admin-user-role-filter" 
+                                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px" 
+                                onchange="loadAdminUsers()">
+                            <option value="">Tất cả vai trò</option>
+                            <option value="customer">Khách hàng</option>
+                            <option value="support">🎧 CSKH / Bán hàng</option>
+                            <option value="warehouse">📦 Thủ kho</option>
+                            <option value="admin">👑 Quản trị viên</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="loadAdminUsers(true, this)">🔄 Làm mới</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Họ và tên</th>
+                                    <th>Email & SĐT</th>
+                                    <th>Phân quyền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

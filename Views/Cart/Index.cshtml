@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Giỏ hàng của bạn";
+}
+<div class="container section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+        <div>
+            <h2 class="section-title" style="margin-bottom:4px">🛒 Giỏ hàng của bạn</h2>
+            <p style="color:var(--text-2);margin:0;font-size:14px">Xem lại các sản phẩm bạn đã chọn, số lượng, màu sắc và tiến hành đặt hàng.</p>
+        </div>
+        <a href="/" class="btn btn-ghost">← Tiếp tục mua sắm</a>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)">
+        <div id="cart-page-items">
+            <div class="spinner"></div>
+        </div>
+        <div id="cart-page-actions" style="margin-top:20px;display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap">
+            <button type="button" class="btn btn-outline" onclick="openCart()">📱 Xem dạng ngăn kéo</button>
+            <button type="button" class="btn btn-primary" onclick="openCheckout()" style="padding:10px 24px;font-weight:700">🛍️ Tiến hành đặt hàng ngay →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+            var pageEl = document.getElementById('cart-page-items');
+            var actionsEl = document.getElementById('cart-page-actions');
+            if (actionsEl) actionsEl.style.display = 'none';
+            if (pageEl) {
+                pageEl.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+                        <div style="font-size:60px;margin-bottom:14px">🔒</div>
+                        <h3 style="color:var(--text);margin-bottom:8px">Vui lòng đăng nhập</h3>
+                        <p style="font-size:14px;color:var(--text-2);margin-bottom:20px">Đăng nhập tài khoản của bạn để xem giỏ hàng và tiến hành đặt hàng!</p>
+                        <button type="button" class="btn btn-primary" onclick="openAuthModal()">Đăng nhập ngay</button>
+                    </div>`;
+            }
+            return;
+        }
+
+        if (typeof syncCart === 'function') {
+            await syncCart();
+        } else if (typeof loadCart === 'function') {
+            await loadCart();
+        }
+        if (typeof renderCart === 'function') {
+            renderCart();
+        }
+    });
+</script>

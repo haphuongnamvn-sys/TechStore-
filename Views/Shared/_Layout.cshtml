@@ -1,0 +1,48 @@
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+    var isSupportPage = ctrl == "Support" || ctrl == "SupportView";
+}
+<!DOCTYPE html>
+<html lang="vi" class="@(isSupportPage ? "cskh-active" : "")">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " – TechStore" : "TechStore – Điện tử & Công nghệ Cao cấp")</title>
+    <meta name="description" content="TechStore – Mua sắm điện thoại, laptop, âm thanh, thiết bị công nghệ chính hãng giá tốt.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@(isSupportPage ? "cskh-active" : "")">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Navigation Bar -->
+    @await Html.PartialAsync("_Navbar")
+
+    <!-- Main Content Body -->
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- Modals & Drawers -->
+    @await Html.PartialAsync("_Modals")
+
+    <!-- Shared Footer (Không hiển thị trong CSKH Desk) -->
+    @if (!isSupportPage)
+    {
+        @await Html.PartialAsync("_Footer")
+    }
+
+    <!-- Draggable Floating Chat & Trợ lý AI (Không hiển thị trong trang CSKH Desk) -->
+    @if (!isSupportPage)
+    {
+        @await Html.PartialAsync("_ChatWidget")
+    }
+
+    <!-- Main Scripts -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

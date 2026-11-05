@@ -1,0 +1,42 @@
+<nav class="navbar">
+    <div class="nav-inner">
+        <a class="logo" href="/" style="text-decoration:none">⚡ TechStore</a>
+
+        <div class="search-wrap">
+            <input type="text" id="search-input" placeholder="Tìm điện thoại, laptop, tai nghe..." autocomplete="off">
+            <button onclick="doSearch()">Tìm kiếm</button>
+        </div>
+
+        <div class="nav-actions">
+            <a class="nav-btn" href="/orders" id="nav-orders-btn" style="display:none;text-decoration:none" title="Đơn hàng của tôi">
+                📦 Đơn hàng
+            </a>
+            <a class="nav-btn" id="nav-support-btn" href="/support" style="display:none;text-decoration:none" title="Bàn làm việc CSKH">
+                🎧 CSKH Desk
+            </a>
+            <a class="nav-btn" id="nav-admin-btn" href="/admin" style="display:none;text-decoration:none" title="Quản trị">
+                ⚙️ Admin
+            </a>
+            <a class="nav-btn" id="nav-warehouse-btn" href="/warehouse" style="display:none;text-decoration:none" title="Kho hàng">
+                📦 Kho hàng
+            </a>
+            <button class="nav-btn" id="nav-cart-btn" onclick="openCart()">
+                🛒 Giỏ hàng
+                <span class="badge-count" id="cart-count" style="display:none">0</span>
+            </button>
+            <button class="nav-btn" id="nav-auth-btn" onclick="openAuthModal()">👤 Đăng nhập</button>
+            <div class="user-menu-wrapper" style="position:relative;display:inline-block">
+                <button class="nav-btn" id="nav-user-btn" onclick="toggleUserDropdown(event)" style="display:none" title="Tài khoản cá nhân">
+                    👤 <span id="nav-username"></span> ▾
+                </button>
+                <div class="user-dropdown-menu" id="user-dropdown-menu" style="display:none">
+                    <div class="user-dropdown-item" onclick="openProfileModal();closeUserDropdown()">👤 Thông tin cá nhân</div>
+                    <a class="user-dropdown-item" href="/orders" onclick="closeUserDropdown()" style="text-decoration:none;color:inherit;display:block">📦 Đơn mua của tôi</a>
+                    <a class="user-dropdown-item" id="user-dropdown-support" href="/support" onclick="closeUserDropdown()" style="display:none;text-decoration:none;color:inherit">🎧 Bàn làm việc CSKH</a>
+                    <div class="user-dropdown-divider"></div>
+                    <div class="user-dropdown-item user-dropdown-danger" onclick="logout();closeUserDropdown()">🚪 Đăng xuất</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

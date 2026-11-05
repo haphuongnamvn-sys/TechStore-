@@ -1,0 +1,21 @@
+## Ignore Visual Studio temporary files, build results, and local caches
+.vs/
+.vscode/
+.idea/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+*.pyc
+temp.js
+appsettings.Development.json
+

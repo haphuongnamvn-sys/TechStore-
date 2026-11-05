@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+<div class="container section">
+    <div style="max-width:600px;margin:0 auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow)">
+        <h2 style="margin-bottom:14px">👤 Quản lý thông tin cá nhân</h2>
+        <p style="color:var(--text-2);margin-bottom:20px">Xem và cập nhật thông tin tài khoản, sổ địa chỉ nhận hàng và mật khẩu.</p>
+        <button class="btn btn-primary btn-full" onclick="openProfileModal()">Mở cửa sổ chỉnh sửa thông tin & Sổ địa chỉ ⚙️</button>
+        <div style="margin-top:16px;text-align:center">
+            <a href="/orders" class="btn btn-ghost">Xem lịch sử đơn mua →</a>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if(!isLoggedIn()) {
+        openAuthModal('login');
+    } else {
+        openProfileModal();
+    }
+});
+</script>
